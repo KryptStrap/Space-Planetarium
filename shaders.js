@@ -1,32 +1,7 @@
-import {gl, startWebGL} from "./initWebGL.js";
+import {gl, startWebGL} from "./initWebGlContext.js";
+import {positions} from "./initObjectsWebGLScene.js";
 
 startWebGL(); // запуск функции создания контекста
-
-let positions = new Float32Array([
-  -0.05, 0.5,
-  -0.05, -0.5,
-  0.05, -0.5,
-
-  0.05, -0.5,
-  -0.05, 0.5,
-  0.05, 0.5,
-
-  0.05, 0.5,
-  0.5, 0.5,
-  0.5, 0.40,
-
-  0.5, 0.40,
-  0.05, 0.40,
-  0.05, 0.5,
-
-  0.05, 0.05,
-  0.3, 0.05,
-  0.3, -0.05,
-
-  0.3, -0.05,
-  0.05, -0.05,
-  0.05, 0.05
-]);
 
 function createShader(gl, type, source) {
 
@@ -68,28 +43,55 @@ const positionBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
 
-const m3 = {
-  translation: function(tx, ty) {
+const mat4 = {
+  translation: function(tx, ty, tz) {
     return [
-      1.0, 0.0, tx,
-      0.0, 1.0, ty,
-      0.0, 0.0, 1.0
+      1.0, 0.0, 0.0, tx,
+      0.0, 1.0, 0.0, ty,
+      0.0, 0.0, 1.0, tz,
+      0.0, 0.0, 0.0, 1.0
     ];
   },
 
-  rotation: function(angle) {
+  rotationX: function(angleX) {
+    let c = Math.cos(angleX);
+    let s = Math.sin(angleX);
     return [
-      Math.cos(angle), -Math.sin(angle), 0.0,
-      Math.sin(angle), Math.cos(angle), 0.0,
-      0.0, 0.0, 1.0
+      1.0, 0.0, 0.0, 0.0,
+      0.0, c, s, 0.0,
+      0.0, -s, c, 0.0,
+      0.0, 0.0, 0.0, 1.0
     ]
   },
 
-  scale: function(sx, sy) {
+  rotationY: function(angleY) {
+    let c = Math.cos(angleY);
+    let s = Math.sin(angleY);
     return [
-      sx, 0.0, 0.0,
-      0.0, sy, 0.0,
-      0.0, 0.0, 1.0
+      c, 0.0, -s, 0.0,
+      0.0, 1.0, 0.0, 0.0,
+      s, 0.0, c, 0.0,
+      0.0, 0.0, 0.0, 1.0
+    ]
+  },
+
+  rotationZ: function(angleZ) {
+    let c = Math.cos(angleZ);
+    let s = Math.sin(angleZ);
+    return [
+      c, s, 0.0, 0.0,
+      -s, c, 0.0, 0.0,
+      0.0, 0.0, 1.0, 0.0,
+      0.0, 0.0, 0.0, 1.0
+    ]
+  },
+
+  scale: function(sx, sy, sz) {
+    return [
+      sx, 0.0, 0.0, 0.0,
+      0.0, sy, 0.0, 0.0,
+      0.0, 0.0, sz, 0.0,
+      0.0, 0.0, 0.0, 1.0
     ]
   }
 
@@ -101,7 +103,7 @@ function drawF () {
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
   // Указываем атрибуту, как получать данные от positionBuffer (ARRAY_BUFFER)
-  gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribPointer(positionAttributeLocation, 3, gl.FLOAT, false, 0, 0);
   // 2 компоненты на итерацию
   // наши данные - 32-битные числа с плавающей точкой
   // не нормализовать данные
@@ -109,14 +111,22 @@ function drawF () {
   // начинать с начала буфера
 
   const u_ScaleMatrixLocation = gl.getUniformLocation(program, "u_ScaleMatrix");
-  const u_RotationMatrixLocation = gl.getUniformLocation(program, "u_RotationMatrix");
+
+  const u_RotationX_MatrixLocation = gl.getUniformLocation(program, "u_RotationX_Matrix");
+  const u_RotationY_MatrixLocation = gl.getUniformLocation(program, "u_RotationY_Matrix");
+  const u_RotationZ_MatrixLocation = gl.getUniformLocation(program, "u_RotationZ_Matrix");
+
   const u_TranslationMatrixLocation =  gl.getUniformLocation(program, "u_TranslationMatrix");
 
-  gl.uniformMatrix3fv(u_ScaleMatrixLocation, false, m3.scale(2.0, 1.0));
-  gl.uniformMatrix3fv(u_RotationMatrixLocation, false, m3.rotation(0.7));
-  gl.uniformMatrix3fv(u_TranslationMatrixLocation, false, m3.translation(0.0, 0.0));
+  gl.uniformMatrix4fv(u_ScaleMatrixLocation, false, mat4.scale(1.0, 1.0, 1.0));
 
-  gl.drawArrays(gl.TRIANGLES, 0, 18);
+  gl.uniformMatrix4fv(u_RotationX_MatrixLocation, false, mat4.rotationX(0.0));
+  gl.uniformMatrix4fv(u_RotationY_MatrixLocation, false, mat4.rotationY(0.0));
+  gl.uniformMatrix4fv(u_RotationZ_MatrixLocation, false, mat4.rotationZ(0.0));
+
+  gl.uniformMatrix4fv(u_TranslationMatrixLocation, false, mat4.translation(0.0, 0.0, 0.0));
+
+  gl.drawArrays(gl.TRIANGLES, 0, 60);
   // Рисовать примитив - треугольник
   // Смещение позиции буфера
   // Количество вершин в position
