@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <canvas id="glcanvas">
+    You browser is not support WebGL!
+  </canvas>
+
+  <script id="vertexShader" type="x-shader/x-vertex">
+    attribute vec2 a_Position;
+    uniform mat3 u_TranslationMatrix;
+    uniform mat3 u_RotationMatrix;
+    uniform mat3 u_ScaleMatrix;
+
+    attribute vec4 a_Colors;
+    varying vec4 v_Colors;
+
+    void main() {
+      mat3 transformMatrix = u_ScaleMatrix * u_RotationMatrix * u_TranslationMatrix;
+      gl_Position = vec4(vec3(a_Position.xy, 1.0) * transformMatrix, 1.0);
+      v_Colors = a_Colors;
+    }
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+    precision mediump float;
+    varying vec4 v_Colors;
+
+    void main() {
+        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+
+    }
+</script>
+
+  <script type="module" src="shaders.js"></script>
+  </body>
+</html>
