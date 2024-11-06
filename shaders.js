@@ -97,7 +97,7 @@ const mat4 = {
 
 }
 
-function drawF () {
+function drawCube () {
   gl.useProgram(program);
   gl.enableVertexAttribArray(positionAttributeLocation);
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
@@ -120,16 +120,16 @@ function drawF () {
 
   gl.uniformMatrix4fv(u_ScaleMatrixLocation, false, mat4.scale(1.0, 1.0, 1.0));
 
-  gl.uniformMatrix4fv(u_RotationX_MatrixLocation, false, mat4.rotationX(0.0));
-  gl.uniformMatrix4fv(u_RotationY_MatrixLocation, false, mat4.rotationY(0.0));
-  gl.uniformMatrix4fv(u_RotationZ_MatrixLocation, false, mat4.rotationZ(0.0));
+  gl.uniformMatrix4fv(u_RotationX_MatrixLocation, false, mat4.rotationX(0.785));
+  gl.uniformMatrix4fv(u_RotationY_MatrixLocation, false, mat4.rotationY(0.785));
+  gl.uniformMatrix4fv(u_RotationZ_MatrixLocation, false, mat4.rotationZ(0.785));
 
   gl.uniformMatrix4fv(u_TranslationMatrixLocation, false, mat4.translation(0.0, 0.0, 0.0));
 
-  gl.drawArrays(gl.TRIANGLES, 0, 60);
+  gl.drawArrays(gl.TRIANGLES, 0, 36);
   // Рисовать примитив - треугольник
   // Смещение позиции буфера
   // Количество вершин в position
 }
 
-drawF();
+drawCube();
