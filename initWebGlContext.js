@@ -21,12 +21,6 @@ export function startWebGL() {
 
   const canvas = document.getElementById("glcanvas");
 
-  document.body.addEventListener("keydown", (key) => {
-    if(key.altKey) {
-      canvas.requestFullscreen();
-    }
-  })
-
   gl = initWebGL(canvas); // инициализация контекста GL
   console.log(gl.getParameter(gl.VENDOR));
   console.log(gl.getParameter(gl.VERSION));
@@ -42,5 +36,11 @@ export function startWebGL() {
     gl.enable(gl.DEPTH_TEST); // включает использование буфера глубины
     gl.depthFunc(gl.LEQUAL); // определяет работу буфера глубины: более ближние объекты перекрывают дальние
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // очистить буфер цвета и буфер глубины.
+
+    window.addEventListener("resize", () => {
+      gl.canvas.width = window.innerWidth;
+      gl.canvas.height = window.innerHeight;
+      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    })
   }
 }
