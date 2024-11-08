@@ -10,38 +10,6 @@
   <canvas id="glcanvas">
     You browser is not support WebGL!
   </canvas>
-
-  <script id="vertexShader" type="x-shader/x-vertex">
-    attribute vec4 a_Position;
-
-    uniform mat4 u_ScaleMatrix;
-
-    uniform mat4 u_RotationX_Matrix;
-    uniform mat4 u_RotationY_Matrix;
-    uniform mat4 u_RotationZ_Matrix;
-
-    uniform mat4 u_TranslationMatrix;
-
-    attribute vec4 a_Colors;
-    varying vec4 v_Colors;
-
-    void main() {
-      mat4 transformMatrix = u_ScaleMatrix * (u_RotationZ_Matrix * u_RotationY_Matrix * u_RotationX_Matrix) * u_TranslationMatrix;
-      gl_Position = a_Position * transformMatrix * vec4(0.4, 1.0, 1.0, 1.0);
-      v_Colors = a_Colors;
-    }
-</script>
-
-<script id="fragmentShader" type="x-shader/x-fragment">
-    precision mediump float;
-    varying vec4 v_Colors;
-
-    void main() {
-        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-
-    }
-</script>
-
-  <script type="module" src="shaders.js"></script>
+  <script type="module" src="createWebGlShaderProgram.js"></script>
   </body>
 </html>
