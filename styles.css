@@ -3,3 +3,21 @@ body {
     padding: 0;
     overflow: hidden;
 }
+
+canvas {
+    width: 100vw;
+    height: 100vh;
+}
+
+.fullscreen-button {
+    position: absolute;
+    top: 1vh;
+    right: 1vw;
+    z-index: 10;
+    border-radius: 0.5em;
+    font-size: 0.8em;
+
+    background-color: gray;
+    color: yellow;
+    border-color: yellow;
+}
