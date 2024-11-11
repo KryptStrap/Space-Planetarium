@@ -2,12 +2,6 @@ import {gl, startWebGL} from "./initWebGlContext.js";
 import {positions, colors} from "./initObjectsWebGLScene.js";
 
 let program;
-let positionAttributeLocation;
-let positionBuffer;
-let colorsAttributeLocation;;
-let colorsBuffer;
-
-startWebGL(); // запуск функции создания контекста
 
 function createShader(gl, type, source) {
 
@@ -47,9 +41,10 @@ const mat4 = {
     ];
   },
 
-  rotationX: function(angleX) {
-    let c = Math.cos(angleX);
-    let s = Math.sin(angleX);
+  rotationX: function(angleDeg) {
+    const angleRadian = angleDeg * Math.PI / 180;
+    const c = Math.cos(angleRadian);
+    const s = Math.sin(angleRadian);
     return [
       1.0, 0.0, 0.0, 0.0,
       0.0, c, s, 0.0,
@@ -58,9 +53,10 @@ const mat4 = {
     ]
   },
 
-  rotationY: function(angleY) {
-    let c = Math.cos(angleY);
-    let s = Math.sin(angleY);
+  rotationY: function(angleDeg) {
+    const angleRadian = angleDeg * Math.PI / 180;
+    const c = Math.cos(angleRadian);
+    const s = Math.sin(angleRadian);
     return [
       c, 0.0, -s, 0.0,
       0.0, 1.0, 0.0, 0.0,
@@ -69,9 +65,10 @@ const mat4 = {
     ]
   },
 
-  rotationZ: function(angleZ) {
-    let c = Math.cos(angleZ);
-    let s = Math.sin(angleZ);
+  rotationZ: function(angleDeg) {
+    const angleRadian = angleDeg * Math.PI / 180;
+    const c = Math.cos(angleRadian);
+    const s = Math.sin(angleRadian);
     return [
       c, s, 0.0, 0.0,
       -s, c, 0.0, 0.0,
@@ -89,75 +86,22 @@ const mat4 = {
     ]
   },
 
-  /*perspective: function(fieldOfViewInRadians, aspect, near, far) {
-    const f = Math.tan(Math.PI * 0.5 - 0.5 * fieldOfViewInRadians);
+  perspective: function(fieldOfView, aspect, near, far) {
+    const f = Math.tan(Math.PI * 0.5 - 0.5 * fieldOfView * Math.PI / 180);
     const rangeInv = 1.0 / (near - far);
- 
     return [
       f / aspect, 0.0, 0.0, 0.0,
       0.0, f, 0.0, 0.0,
-      0.0, 0.0, (near + far) * rangeInv, 1.0,
+      0.0, 0.0, (near + far) * rangeInv, -1.0,
       0.0, 0.0, near * far * rangeInv * 2, 0.0
     ];
-  }*/
-
-  perspective: function() {
-    let aspect = gl.canvas.width / gl.canvas.height;
-    return [
-      1/aspect, 0.0, 0.0, 0.0,
-      0.0, 1.0, 0.0, 0.0,
-      0.0, 0.0, 1.0, 1.0,
-      0.0, 0.0, 0.0, 1.0
-      ];
   }
 }
 
+let timeThen = 0;
 
-
-let x_Rotating = 0;
-let y_Rotating = 0;
-let z_Rotating = 0;
-let offset = 0.020;
-
-function drawCube() {
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  gl.useProgram(program);
-  gl.enableVertexAttribArray(positionAttributeLocation);
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-
-  gl.vertexAttribPointer(positionAttributeLocation, 3, gl.FLOAT, false, 0, 0);
-
-  gl.enableVertexAttribArray(colorsAttributeLocation);
-  gl.bindBuffer(gl.ARRAY_BUFFER, colorsBuffer);
-
-  gl.vertexAttribPointer(colorsAttributeLocation, 4, gl.FLOAT, false, 0, 0);
-
-  const u_Scale_Matrix_Location = gl.getUniformLocation(program, "u_Scale_Matrix");
-
-  const u_RotationX_Matrix_Location = gl.getUniformLocation(program, "u_RotationX_Matrix");
-  const u_RotationY_Matrix_Location = gl.getUniformLocation(program, "u_RotationY_Matrix");
-  const u_RotationZ_Matrix_Location = gl.getUniformLocation(program, "u_RotationZ_Matrix");
-
-
-  const u_Translation_Matrix_Location =  gl.getUniformLocation(program, "u_Translation_Matrix");
-
-  const u_Perspective_Matrix_Location = gl.getUniformLocation(program, "u_Perspective_Matrix");
-
-  gl.uniformMatrix4fv(u_Scale_Matrix_Location, false, mat4.scale(1.0, 1.0, 1.0));
-
-  gl.uniformMatrix4fv(u_RotationX_Matrix_Location, false, mat4.rotationX(x_Rotating));
-  gl.uniformMatrix4fv(u_RotationY_Matrix_Location, false, mat4.rotationY(y_Rotating));
-  gl.uniformMatrix4fv(u_RotationZ_Matrix_Location, false, mat4.rotationZ(z_Rotating));
-
-  gl.uniformMatrix4fv(u_Translation_Matrix_Location, false, mat4.translation(0.0, 0.0, 0.5));
-
-  gl.uniformMatrix4fv(u_Perspective_Matrix_Location, false, mat4.perspective());
-
-  gl.drawArrays(gl.TRIANGLES, 0, 36);
-  requestAnimationFrame(drawCube);
-  x_Rotating += offset;
-  y_Rotating += offset;
-}
+let object1;
+let object2;
 
 async function loadShader() {
   const vertexShaderSource = await fetch("default3dVertexShader.vert")
@@ -171,17 +115,124 @@ async function loadShader() {
   const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
 
   program = createProgram(gl, vertexShader, fragmentShader);
-  positionAttributeLocation = gl.getAttribLocation(program, "vertex_Position");
-  positionBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
 
-  colorsAttributeLocation = gl.getAttribLocation(program, "a_Colors");
-  colorsBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, colorsBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+  object1 = new webglObjectScene(gl, program, positions, colors);
+  object2 = new webglObjectScene(gl, program, positions, colors);
+  function drawCube(timeNow) {
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    object1.setTranslation([-1.0, 0.0, -3.0]);
+    object1.setRotation([45, 45, 0]);
+    object1.setScale([1.0, 1.0, 1.0]);
+    object1.drawObject();
 
-  requestAnimationFrame(drawCube);
+    object2.setTranslation([1.0, 0.0, -3.0]);
+    object2.setRotation([45, 45, 0]);
+    object2.setScale([1.0, 1.0, 1.0]);
+    object2.drawObject();
+
+    timeNow *= 0.001;
+    //console.log(1 / (timeNow - timeThen));
+    timeThen = timeNow;
+
+    requestAnimationFrame(drawCube)
+  }
+  requestAnimationFrame(drawCube)
 }
 
-loadShader();
+startWebGL(); // запуск функции создания контекста
+loadShader(); // Загрузка шейдеров
+
+class webglObjectScene {
+  #gl;
+  #program;
+  #positionAttributeLocation;
+  #positionBuffer;
+  #colorsAttributeLocation;
+  #colorsBuffer;
+
+  #u_Scale_Matrix_Location;
+  #u_RotationX_Matrix_Location;
+  #u_RotationY_Matrix_Location;
+  #u_RotationZ_Matrix_Location;
+  #u_Translation_Matrix_Location;
+  #u_Perspective_Matrix_Location
+
+  #xTranslate;
+  #yTranslate;
+  #zTranslate;
+
+  #xRotate;
+  #yRotate;
+  #zRotate;
+
+  #xScale;
+  #yScale;
+  #zScale;
+
+  constructor(gl, program, positions, colors) {
+    this.#gl = gl;
+    this.#program = program;
+
+    this.#initBuffers(positions, colors);
+  }
+
+  #initBuffers(positions, colors) {
+    this.#positionAttributeLocation = this.#gl.getAttribLocation(this.#program, "a_Position");
+    this.#positionBuffer = this.#gl.createBuffer();
+    this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#positionBuffer);
+    this.#gl.bufferData(this.#gl.ARRAY_BUFFER, positions, this.#gl.STATIC_DRAW);
+
+    this.#colorsAttributeLocation = this.#gl.getAttribLocation(this.#program, "a_Colors");
+    this.#colorsBuffer = this.#gl.createBuffer();
+    this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#colorsBuffer);
+    this.#gl.bufferData(this.#gl.ARRAY_BUFFER, colors, this.#gl.STATIC_DRAW);
+
+    this.#u_Scale_Matrix_Location = gl.getUniformLocation(program, "u_Scale_Matrix");
+
+    this.#u_RotationX_Matrix_Location = gl.getUniformLocation(program, "u_RotationX_Matrix");
+    this.#u_RotationY_Matrix_Location = gl.getUniformLocation(program, "u_RotationY_Matrix");
+    this.#u_RotationZ_Matrix_Location = gl.getUniformLocation(program, "u_RotationZ_Matrix");
+
+    this.#u_Translation_Matrix_Location =  gl.getUniformLocation(program, "u_Translation_Matrix");
+
+    this.#u_Perspective_Matrix_Location = gl.getUniformLocation(program, "u_Perspective_Matrix");
+  }
+
+  setTranslation(arrayTranslate) {
+    this.#xTranslate = arrayTranslate[0];
+    this.#yTranslate = arrayTranslate[1];
+    this.#zTranslate = arrayTranslate[2];
+  }
+
+  setRotation(arrayRotate) {
+    this.#xRotate = arrayRotate[0];
+    this.#yRotate = arrayRotate[1];
+    this.#zRotate = arrayRotate[2];
+  }
+
+  setScale(arrayScale) {
+    this.#xScale = arrayScale[0];
+    this.#yScale = arrayScale[1];
+    this.#zScale = arrayScale[2];
+  }
+
+  drawObject() {
+    this.#gl.useProgram(this.#program);
+    this.#gl.enableVertexAttribArray(this.#positionAttributeLocation);
+    this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#positionBuffer);
+    this.#gl.vertexAttribPointer(this.#positionAttributeLocation, 3, this.#gl.FLOAT, false, 0, 0);
+    this.#gl.enableVertexAttribArray(this.#colorsAttributeLocation);
+    this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#colorsBuffer);
+    this.#gl.vertexAttribPointer(this.#colorsAttributeLocation, 4, this.#gl.FLOAT, false, 0, 0);
+
+    this.#gl.uniformMatrix4fv(this.#u_Scale_Matrix_Location, false, mat4.scale(this.#xScale, this.#yScale, this.#zScale));
+    this.#gl.uniformMatrix4fv(this.#u_RotationX_Matrix_Location, false, mat4.rotationX(this.#xRotate));
+    this.#gl.uniformMatrix4fv(this.#u_RotationY_Matrix_Location, false, mat4.rotationY(this.#yRotate));
+    this.#gl.uniformMatrix4fv(this.#u_RotationZ_Matrix_Location, false, mat4.rotationZ(this.#zRotate));
+
+    this.#gl.uniformMatrix4fv(this.#u_Translation_Matrix_Location, false, mat4.translation(this.#xTranslate, this.#yTranslate, this.#zTranslate));
+    this.#gl.uniformMatrix4fv(this.#u_Perspective_Matrix_Location, false, mat4.perspective(45, gl.canvas.width / gl.canvas.height, 0.1, 2000));
+
+    this.#gl.drawArrays(this.#gl.TRIANGLES, 0, 36)
+  }
+}
