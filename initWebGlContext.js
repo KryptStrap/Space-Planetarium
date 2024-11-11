@@ -6,7 +6,7 @@ function initWebGL(canvas) {
   try {
     // Попытаться получить стандартный контекст. Если не получится, попробовать получить экспериментальный.
     gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-  } catch (e) {}
+  } catch (error) {}
 
   // Если мы не получили контекст GL, завершить работу
   if (!gl) {
@@ -29,8 +29,8 @@ export function startWebGL() {
   // продолжать только если WebGL доступен и работает
 
   if (gl) {
-    gl.canvas.width = window.innerWidth;
-    gl.canvas.height = window.innerHeight;
+    gl.canvas.width = gl.canvas.clientWidth;
+    gl.canvas.height = gl.canvas.clientHeight;
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.clearColor(0.0, 0.0, 0.0, 1.0); // установить в качестве цвета очистки буфера цвета чёрный, полная непрозрачность
     gl.enable(gl.DEPTH_TEST); // включает использование буфера глубины
@@ -38,9 +38,17 @@ export function startWebGL() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // очистить буфер цвета и буфер глубины.
 
     window.addEventListener("resize", () => {
-      gl.canvas.width = window.innerWidth;
-      gl.canvas.height = window.innerHeight;
+      gl.canvas.width = gl.canvas.clientWidth;
+      gl.canvas.height = gl.canvas.clientHeight;
       gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    })
+
+    document.getElementById("fullscreen-button").addEventListener("click", () => {
+      gl.canvas.requestFullscreen();
+    })
+    document.addEventListener("keydown", (event) => {
+      if(event.code === "KeyF");
+        gl.canvas.requestFullscreen();
     })
   }
 }
