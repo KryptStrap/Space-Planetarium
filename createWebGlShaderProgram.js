@@ -32,56 +32,55 @@ function createProgram(gl, vertexShader, fragmentShader) {
 }
 
 const mat4 = {
-  translation: function(tx, ty, tz) {
+  translation: function(translationArray) {
     return [
       1.0, 0.0, 0.0, 0.0,
       0.0, 1.0, 0.0, 0.0,
       0.0, 0.0, 1.0, 0.0,
-      tx, ty, tz, 1.0
+      translationArray[0], translationArray[1], translationArray[2], 1.0
     ];
   },
 
-  rotationX: function(angleDeg) {
-    const angleRadian = angleDeg * Math.PI / 180;
-    const c = Math.cos(angleRadian);
-    const s = Math.sin(angleRadian);
-    return [
+  rotation: function(rotationArray) {
+    const cX = Math.cos(rotationArray[0]);
+    const sX = Math.sin(rotationArray[0]);
+
+    const cY = Math.cos(rotationArray[1]);
+    const sY = Math.sin(rotationArray[1]);
+
+    const cZ = Math.cos(rotationArray[2]);
+    const sZ = Math.sin(rotationArray[2]);
+
+    const rotationX = [
       1.0, 0.0, 0.0, 0.0,
-      0.0, c, s, 0.0,
-      0.0, -s, c, 0.0,
+      0.0, cX, sX, 0.0,
+      0.0, -sX, cX, 0.0,
       0.0, 0.0, 0.0, 1.0
-    ]
-  },
+    ];
 
-  rotationY: function(angleDeg) {
-    const angleRadian = angleDeg * Math.PI / 180;
-    const c = Math.cos(angleRadian);
-    const s = Math.sin(angleRadian);
-    return [
-      c, 0.0, -s, 0.0,
+    const rotationY = [
+      cY, 0.0, -sY, 0.0,
       0.0, 1.0, 0.0, 0.0,
-      s, 0.0, c, 0.0,
+      sY, 0.0, cY, 0.0,
       0.0, 0.0, 0.0, 1.0
-    ]
-  },
+    ];
 
-  rotationZ: function(angleDeg) {
-    const angleRadian = angleDeg * Math.PI / 180;
-    const c = Math.cos(angleRadian);
-    const s = Math.sin(angleRadian);
-    return [
-      c, s, 0.0, 0.0,
-      -s, c, 0.0, 0.0,
+    const rotationZ = [
+      cZ, sZ, 0.0, 0.0,
+      -sZ, cZ, 0.0, 0.0,
       0.0, 0.0, 1.0, 0.0,
       0.0, 0.0, 0.0, 1.0
-    ]
+    ];
+
+    return [rotationX, rotationY, rotationZ];
+  
   },
 
-  scale: function(sx, sy, sz) {
+  scale: function(scaleArray) {
     return [
-      sx, 0.0, 0.0, 0.0,
-      0.0, sy, 0.0, 0.0,
-      0.0, 0.0, sz, 0.0,
+      scaleArray[0], 0.0, 0.0, 0.0,
+      0.0, scaleArray[1], 0.0, 0.0,
+      0.0, 0.0, scaleArray[2], 0.0,
       0.0, 0.0, 0.0, 1.0
     ]
   },
@@ -116,8 +115,8 @@ async function loadShader() {
 
   program = createProgram(gl, vertexShader, fragmentShader);
 
-  object1 = new webglObjectScene(gl, program, positions, colors);
-  object2 = new webglObjectScene(gl, program, positions, colors);
+  object1 = new webglObjectScene(gl, program, positions, colors, "triangles");
+  object2 = new webglObjectScene(gl, program, positions, colors, "triangles");
   function drawCube(timeNow) {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     object1.setTranslation([-1.0, 0.0, -3.0]);
@@ -131,7 +130,7 @@ async function loadShader() {
     object2.drawObject();
 
     timeNow *= 0.001;
-    //console.log(1 / (timeNow - timeThen));
+    console.log(1 / (timeNow - timeThen));
     timeThen = timeNow;
 
     requestAnimationFrame(drawCube)
@@ -150,28 +149,30 @@ class webglObjectScene {
   #colorsAttributeLocation;
   #colorsBuffer;
 
+  #translationArray;
+  #rotationMatrixArray;
+  #scaleArray;
+
   #u_Scale_Matrix_Location;
-  #u_RotationX_Matrix_Location;
-  #u_RotationY_Matrix_Location;
-  #u_RotationZ_Matrix_Location;
+  #u_Rotation_Matrix_Location;
   #u_Translation_Matrix_Location;
   #u_Perspective_Matrix_Location
 
-  #xTranslate;
-  #yTranslate;
-  #zTranslate;
+  #primitives;
 
-  #xRotate;
-  #yRotate;
-  #zRotate;
-
-  #xScale;
-  #yScale;
-  #zScale;
-
-  constructor(gl, program, positions, colors) {
+  constructor(gl, program, positions, colors, primitives) {
     this.#gl = gl;
     this.#program = program;
+    switch(primitives) {
+      case "triangles":
+      this.#primitives = this.#gl.TRIANGLES;
+      break;
+      case "lines":
+        this.#primitives = this.#gl.LINES;
+        break;
+      case "points":
+        this.#primitives = this.#gl.POINTS;
+    }
 
     this.#initBuffers(positions, colors);
   }
@@ -180,40 +181,32 @@ class webglObjectScene {
     this.#positionAttributeLocation = this.#gl.getAttribLocation(this.#program, "a_Position");
     this.#positionBuffer = this.#gl.createBuffer();
     this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#positionBuffer);
-    this.#gl.bufferData(this.#gl.ARRAY_BUFFER, positions, this.#gl.STATIC_DRAW);
+    this.#gl.bufferData(this.#gl.ARRAY_BUFFER, new Float32Array(positions), this.#gl.STATIC_DRAW);
 
     this.#colorsAttributeLocation = this.#gl.getAttribLocation(this.#program, "a_Colors");
     this.#colorsBuffer = this.#gl.createBuffer();
     this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#colorsBuffer);
-    this.#gl.bufferData(this.#gl.ARRAY_BUFFER, colors, this.#gl.STATIC_DRAW);
+    this.#gl.bufferData(this.#gl.ARRAY_BUFFER, new Float32Array(colors), this.#gl.STATIC_DRAW);
 
     this.#u_Scale_Matrix_Location = gl.getUniformLocation(program, "u_Scale_Matrix");
 
-    this.#u_RotationX_Matrix_Location = gl.getUniformLocation(program, "u_RotationX_Matrix");
-    this.#u_RotationY_Matrix_Location = gl.getUniformLocation(program, "u_RotationY_Matrix");
-    this.#u_RotationZ_Matrix_Location = gl.getUniformLocation(program, "u_RotationZ_Matrix");
+    this.#u_Rotation_Matrix_Location = gl.getUniformLocation(program, "u_Rotation_Matrix");
 
     this.#u_Translation_Matrix_Location =  gl.getUniformLocation(program, "u_Translation_Matrix");
 
     this.#u_Perspective_Matrix_Location = gl.getUniformLocation(program, "u_Perspective_Matrix");
   }
 
-  setTranslation(arrayTranslate) {
-    this.#xTranslate = arrayTranslate[0];
-    this.#yTranslate = arrayTranslate[1];
-    this.#zTranslate = arrayTranslate[2];
+  setTranslation(translationArray) {
+    this.#translationArray = mat4.translation(translationArray);
   }
 
-  setRotation(arrayRotate) {
-    this.#xRotate = arrayRotate[0];
-    this.#yRotate = arrayRotate[1];
-    this.#zRotate = arrayRotate[2];
+  setRotation(rotationArray) {
+    this.#rotationMatrixArray = mat4.rotation(rotationArray).flat();
   }
 
-  setScale(arrayScale) {
-    this.#xScale = arrayScale[0];
-    this.#yScale = arrayScale[1];
-    this.#zScale = arrayScale[2];
+  setScale(scaleArray) {
+    this.#scaleArray = mat4.scale(scaleArray);
   }
 
   drawObject() {
@@ -225,14 +218,12 @@ class webglObjectScene {
     this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#colorsBuffer);
     this.#gl.vertexAttribPointer(this.#colorsAttributeLocation, 4, this.#gl.FLOAT, false, 0, 0);
 
-    this.#gl.uniformMatrix4fv(this.#u_Scale_Matrix_Location, false, mat4.scale(this.#xScale, this.#yScale, this.#zScale));
-    this.#gl.uniformMatrix4fv(this.#u_RotationX_Matrix_Location, false, mat4.rotationX(this.#xRotate));
-    this.#gl.uniformMatrix4fv(this.#u_RotationY_Matrix_Location, false, mat4.rotationY(this.#yRotate));
-    this.#gl.uniformMatrix4fv(this.#u_RotationZ_Matrix_Location, false, mat4.rotationZ(this.#zRotate));
+    this.#gl.uniformMatrix4fv(this.#u_Scale_Matrix_Location, false, new Float32Array(this.#scaleArray));
+    this.#gl.uniformMatrix4fv(this.#u_Rotation_Matrix_Location, false, new Float32Array(this.#rotationMatrixArray));
 
-    this.#gl.uniformMatrix4fv(this.#u_Translation_Matrix_Location, false, mat4.translation(this.#xTranslate, this.#yTranslate, this.#zTranslate));
-    this.#gl.uniformMatrix4fv(this.#u_Perspective_Matrix_Location, false, mat4.perspective(45, gl.canvas.width / gl.canvas.height, 0.1, 2000));
+    this.#gl.uniformMatrix4fv(this.#u_Translation_Matrix_Location, false, new Float32Array(this.#translationArray));
+    this.#gl.uniformMatrix4fv(this.#u_Perspective_Matrix_Location, false, mat4.perspective(45, this.#gl.canvas.width / this.#gl.canvas.height, 0.1, 2000));
 
-    this.#gl.drawArrays(this.#gl.TRIANGLES, 0, 36)
+    this.#gl.drawArrays(this.#primitives, 0, positions.length / 3);
   }
 }
