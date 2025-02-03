@@ -9,6 +9,46 @@ canvas {
     height: 100vh;
 }
 
+.framerate {
+    position: absolute;
+    top: 1vh;
+    left: 1vw;
+    z-index: 10;
+    border-radius: 0.5em;
+    font-size: 0.8em;
+    color: white;
+}
+
+.resolution {
+    position: absolute;
+    top: 3vh;
+    left: 1vw;
+    z-index: 10;
+    border-radius: 0.5em;
+    font-size: 0.8em;
+    color: yellow;
+}
+
+.camPos {
+    position: absolute;
+    top: 7vh;
+    left: 1vw;
+    z-index: 10;
+    border-radius: 0.5em;
+    font-size: 0.8em;
+    color: white;
+}
+
+.camRot {
+    position: absolute;
+    top: 11vh;
+    left: 1vw;
+    z-index: 10;
+    border-radius: 0.5em;
+    font-size: 0.8em;
+    color: white;
+}
+
 .fullscreen-button {
     position: absolute;
     top: 1vh;
