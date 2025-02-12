@@ -18,9 +18,11 @@ export function createWebGlContext() {
   const canvas = document.getElementById("glcanvas");
 
   const gl = initWebGL(canvas);
+
+  console.log(gl.getParameter(gl.RENDERER));
   console.log(gl.getParameter(gl.VENDOR));
   console.log(gl.getParameter(gl.VERSION));
-  console.log(gl.getParameter(gl.RENDERER));
+
 
   if (gl) {
     gl.canvas.width = gl.canvas.clientWidth;
