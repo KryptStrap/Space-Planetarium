@@ -22,6 +22,7 @@ export const camera = {
       gl.canvas.width = gl.canvas.clientWidth;
       gl.canvas.height = gl.canvas.clientHeight;
       gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
       mat4.perspective(this.perspectiveMatrix, 45, gl.canvas.width / gl.canvas.height, 0.1, 2000);
       gl.uniformMatrix4fv(u_Perspective_Matrix_Location, false, this.perspectiveMatrix);
     })
@@ -68,101 +69,130 @@ export const camera = {
 }
 
 export class webGlObject {
-  #gl;
-  #program;
+  _gl;
+  _program;
 
-  #positions;
-  #color;
+  _positions;
+  _indices;
+  _color;
   
-  #positionAttributeLocation;
-  #positionBuffer;
-  #colorAttributeLocation;
-  #colorBuffer;
+  _positionAttributeLocation;
+  _positionBuffer;
+  _colorAttributeLocation;
+  _colorBuffer;
 
-  #u_Scaling_Matrix_Location;
-  #u_Rotation_Matrix_Location;
-  #u_Translation_Matrix_Location;
+  _u_Scaling_Matrix_Location;
+  _u_Rotation_Matrix_Location;
+  _u_Translation_Matrix_Location;
 
-  #translationMatrix;
-  #rotationMatrix;
-  #scalingMatrix;
+  _translationArray;
+  _rotationArray;
+  _scalingArray;
 
-  #primitives;
+  _translationMatrix;
+  _rotationMatrix;
+  _scalingMatrix;
 
-  constructor(gl, program, positions, color, primitives) {
-    this.#gl = gl;
-    this.#program = program;
-    this.#positions = positions;
-    this.#color = color;
+  _primitives;
 
-    this.#translationMatrix = mat4.create();
-    this.#rotationMatrix = mat4.create();
-    this.#scalingMatrix = mat4.create();
-    
-    switch(primitives) {
-      case "triangles":
-      this.#primitives = this.#gl.TRIANGLES;
-      break;
-      case "lines":
-        this.#primitives = this.#gl.LINES;
-        break;
-      case "points":
-        this.#primitives = this.#gl.POINTS;
-        break;
-    }
+  constructor(gl, program, positions, color, indices) {
+    this._gl = gl;
+    this._program = program;
+
+    this._positions = positions;
+    this._indices =  indices;
+    this._color = color;
+
+    this._translationArray = [0.0, 0.0, 0.0];
+    this._rotationArray = [0.0, 0.0, 0.0,];
+    this._scalingArray = [1.0, 1.0, 1.0];
 
     this.#initBuffers();
 
   }
 
+  
+
   #initBuffers() {
-    this.#positionAttributeLocation = this.#gl.getAttribLocation(this.#program, "a_Position");
-    this.#positionBuffer = this.#gl.createBuffer();
-    this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#positionBuffer);
-    this.#gl.bufferData(this.#gl.ARRAY_BUFFER, new Float32Array(this.#positions), this.#gl.STATIC_DRAW);
+    this._positionAttributeLocation = this._gl.getAttribLocation(this._program, "a_Position");
+    this._positionBuffer = this._gl.createBuffer();
+    this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._positionBuffer);
+    this._gl.bufferData(this._gl.ARRAY_BUFFER, new Float32Array(this._positions), this._gl.STATIC_DRAW);
 
-    this.#colorAttributeLocation = this.#gl.getAttribLocation(this.#program, "a_Color");
-    this.#colorBuffer = this.#gl.createBuffer();
-    this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#colorBuffer);
-    this.#gl.bufferData(this.#gl.ARRAY_BUFFER, new Float32Array(this.#color), this.#gl.STATIC_DRAW);
+    this._indexBuffers = this._indices.map(face => {
+      const buffer = this._gl.createBuffer();
+      this._gl.bindBuffer(this._gl.ELEMENT_ARRAY_BUFFER, buffer);
+      this._gl.bufferData(
+          this._gl.ELEMENT_ARRAY_BUFFER,
+          new Uint16Array(face),
+          this._gl.STATIC_DRAW
+      );
+      return buffer;
+    });
 
-    this.#u_Scaling_Matrix_Location = this.#gl.getUniformLocation(this.#program, "u_Scaling_Matrix");
+    this._colorAttributeLocation = this._gl.getAttribLocation(this._program, "a_Color");
+    this._colorBuffer = this._gl.createBuffer();
+    this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._colorBuffer);
+    this._gl.bufferData(this._gl.ARRAY_BUFFER, new Float32Array(this._color), this._gl.STATIC_DRAW);
 
-    this.#u_Rotation_Matrix_Location = this.#gl.getUniformLocation(this.#program, "u_Rotation_Matrix");
+    this._u_Scaling_Matrix_Location = this._gl.getUniformLocation(this._program, "u_Scaling_Matrix");
+    this._u_Rotation_Matrix_Location = this._gl.getUniformLocation(this._program, "u_Rotation_Matrix");
+    this._u_Translation_Matrix_Location =  this._gl.getUniformLocation(this._program, "u_Translation_Matrix");
 
-    this.#u_Translation_Matrix_Location =  this.#gl.getUniformLocation(this.#program, "u_Translation_Matrix");
+    this._translationMatrix = mat4.identity(mat4.create());
+    this._rotationMatrix = mat4.identity(mat4.create());
+    this._scalingMatrix = mat4.identity(mat4.create());
+
+    this._gl.uniformMatrix4fv(this._u_Rotation_Matrix_Location, false, this._rotationMatrix);
+    this._gl.uniformMatrix4fv(this._u_Translation_Matrix_Location, false, this._translationMatrix);
+    this._gl.uniformMatrix4fv(this._u_Scaling_Matrix_Location, false, this._scalingMatrix);
   }
 
   setTranslation(translationArray) {
-    mat4.translate(this.#translationMatrix, this.#translationMatrix, translationArray);
+    this._translationArray = translationArray;
+    this._translationMatrix = mat4.identity(this._translationMatrix);
+    mat4.translate(this._translationMatrix, this._translationMatrix, this._translationArray);
   }
 
   setRotation(rotationArray) {
-    mat4.rotateX(this.#rotationMatrix, this.#rotationMatrix, rotationArray[0]);
-    mat4.rotateY(this.#rotationMatrix, this.#rotationMatrix, rotationArray[1]);
-    mat4.rotateZ(this.#rotationMatrix, this.#rotationMatrix, rotationArray[2]);
+    this._rotationArray = rotationArray;
+    this._rotationMatrix = mat4.identity(this._rotationMatrix);
+    mat4.rotateX(this._rotationMatrix, this._rotationMatrix, this._rotationArray[0]);
+    mat4.rotateY(this._rotationMatrix, this._rotationMatrix, this._rotationArray[1]);
+    mat4.rotateZ(this._rotationMatrix, this._rotationMatrix, this._rotationArray[2]);
   }
 
   setScale(scalingArray) {
-    mat4.scale(this.#scalingMatrix, this.#scalingMatrix, scalingArray);
+    this._scalingArray = scalingArray;
+    this._scalingMatrix = mat4.identity(this._scalingMatrix);
+    mat4.scale(this._scalingMatrix, this._scalingMatrix, this._scalingArray);
   }
 
   render() {
-    this.#gl.useProgram(this.#program);
-    this.#gl.enableVertexAttribArray(this.#positionAttributeLocation);
-    this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#positionBuffer);
-    this.#gl.vertexAttribPointer(this.#positionAttributeLocation, 3, this.#gl.FLOAT, false, 0, 0);
-    this.#gl.enableVertexAttribArray(this.#colorAttributeLocation);
-    this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#colorBuffer);
-    this.#gl.vertexAttribPointer(this.#colorAttributeLocation, 4, this.#gl.FLOAT, false, 0, 0);
-
-    this.#gl.uniformMatrix4fv(this.#u_Scaling_Matrix_Location, false, this.#scalingMatrix);
-    this.#gl.uniformMatrix4fv(this.#u_Rotation_Matrix_Location, false, this.#rotationMatrix);
-
-    this.#gl.uniformMatrix4fv(this.#u_Translation_Matrix_Location, false, this.#translationMatrix);
+    this._gl.useProgram(this._program);
     
+    this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._positionBuffer);
+    this._gl.vertexAttribPointer(this._positionAttributeLocation, 3, this._gl.FLOAT, false, 0, 0);
+    this._gl.enableVertexAttribArray(this._positionAttributeLocation);
 
-    this.#gl.drawArrays(this.#primitives, 0, this.#positions.length / 3);
+    this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._colorBuffer);
+    this._gl.vertexAttribPointer(this._colorAttributeLocation, 4, this._gl.FLOAT, false, 0, 0);
+    this._gl.enableVertexAttribArray(this._colorAttributeLocation);
+
+    this._indices.forEach((face, index) => {
+      const buffer = this._indexBuffers[index];
+      this._gl.bindBuffer(this._gl.ELEMENT_ARRAY_BUFFER, buffer);
+
+      if (face.length === 4) {
+        this._gl.drawElements(this._gl.TRIANGLE_FAN, face.length, this._gl.UNSIGNED_SHORT, 0);
+      } else if (face.length === 3) {
+          this._gl.drawElements(this._gl.TRIANGLES, face.length, this._gl.UNSIGNED_SHORT, 0);
+        }
+    });
+
+    this._gl.uniformMatrix4fv(this._u_Translation_Matrix_Location, false, this._translationMatrix);
+    this._gl.uniformMatrix4fv(this._u_Rotation_Matrix_Location, false, this._rotationMatrix);
+    this._gl.uniformMatrix4fv(this._u_Scaling_Matrix_Location, false, this._scalingMatrix);
   }
 }
 
@@ -174,7 +204,9 @@ const camRotHTML = document.getElementById("camRot");
 
 export function renderObjects(gl, objArray, timeNow) {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  objArray.map(webglObject => webglObject.render());
+  objArray.forEach(webglObject => webglObject.render());
+  objArray[1].moveOrbit(0.01);
+  objArray[2].moveOrbit(0.04);
 
   timeNow *= 0.001;
   frameRateHTML.innerText = Math.round(1 / (timeNow - timeThen));
