@@ -1,26 +1,34 @@
-import { createWebGlContext, loadShaderProgram } from "./Engine/initWebGlContext.js";
-import { camera, renderObjects } from "./Engine/initWebGlObject.js";
-import { spObject } from "./SP_Source/initSPObject.js";
-import { OBJParser, modelFileLoader } from "./Engine/OBJLoader.js";
+import { createWebGlContext, createShader, createProgram } from "./Engine/initWebGlContext.js";
+import { camera, frameRender } from "./Engine/initWebGlObject.js";
+import { createSpacePlanetObject } from "./SP_Source/initSPObject.js";
 
 (async function main() {
     const gl = createWebGlContext();
-    const program = await loadShaderProgram(gl, "Engine/Shaders/standartVertexShader.vert", "Engine/Shaders/standartFragmentShader.frag");
-    const parser = new OBJParser();
+    const vertexShader = await createShader(gl, gl.VERTEX_SHADER, "Engine/Shaders/standartVertexShader.vert");
+    const fragmentShader = await createShader(gl, gl.FRAGMENT_SHADER, "Engine/Shaders/standartFragmentShader.frag");
+    const program = createProgram(gl, vertexShader, fragmentShader);
 
-    camera.create(gl, program, [0.0, 20.0, 0.0], [-3.14, 0.0, 0.0]);
+    camera.create(gl, program, [0.0, 4000.0, 0.0], [-3.14, 0.0, 0.0]);
 
-    parser.parse(await modelFileLoader("./Models/sphere.obj"));
+    const sun0 = await createSpacePlanetObject(gl, program, "./Models/sun.obj", "./Textures/sun.jpg", 100);
 
-    console.log(parser.getVertices());
-    console.log(parser.getFaces().flat());
+    const sun1 = await createSpacePlanetObject(gl, program, "./Models/sun.obj", "./Textures/sun.jpg", 25);
+    sun1.setPareentPlanet(sun0, 1200);
 
-    const object1 = new spObject(gl, program, parser.getVertices(), parser.getVertices(), parser.getFaces(), null, null);
-    object1.setTranslation([0.0, 0.0, 0.0]);
+    const sun2 = await createSpacePlanetObject(gl, program, "./Models/sun.obj", "./Textures/sun.jpg", 25);
+    sun2.setPareentPlanet(sun0, 2400);
 
-    const object2 = new spObject(gl, program, parser.getVertices(), parser.getVertices(), parser.getFaces(), object1, 10);
+    const sun3 = await createSpacePlanetObject(gl, program, "./Models/sun.obj", "./Textures/sun.jpg", 15);
+    sun3.setPareentPlanet(sun1, 200);
 
-    const object3 = new spObject(gl, program, parser.getVertices(), parser.getVertices(), parser.getFaces(), object2, 5);
+    const sun4 = await createSpacePlanetObject(gl, program, "./Models/sun.obj", "./Textures/sun.jpg", 15);
+    sun4.setPareentPlanet(sun1, 100);
 
-    requestAnimationFrame(timeNow => renderObjects(gl, [object1, object2, object3], timeNow));
+    requestAnimationFrame(timeNow => frameRender(gl, timeNow, [
+        sun0,
+        sun1,
+        sun2,
+        sun3,
+        sun4
+    ]));
 })()
