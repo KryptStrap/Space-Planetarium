@@ -1,3 +1,5 @@
+import { fileReader } from "./fileLoader.js";
+
 function initWebGL(canvas) {
   let gl = null;
   
@@ -28,7 +30,7 @@ export function createWebGlContext() {
     gl.canvas.width = gl.canvas.clientWidth;
     gl.canvas.height = gl.canvas.clientHeight;
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(0.25, 0.25, 0.25, 1.0); // установить в качестве цвета очистки буфера цвета чёрный, полная непрозрачность
+    gl.clearColor(0.0, 0.0, 0.2, 1.0); // установить в качестве цвета очистки буфера цвета чёрный, полная непрозрачность
     gl.enable(gl.DEPTH_TEST); // включает использование буфера глубины
     gl.depthFunc(gl.LEQUAL); // определяет работу буфера глубины: более ближние объекты перекрывают дальние
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // очистить буфер цвета и буфер глубины.
@@ -41,11 +43,14 @@ export function createWebGlContext() {
   return gl;
 }
 
-function createShader(gl, type, source) {
+export async function createShader(gl, type, shaderSource) {
 
   const shader = gl.createShader(type);   // создание шейдера
-  gl.shaderSource(shader, source);      // устанавливаем шейдеру его программный код
+  const shaderData = await fileReader(shaderSource);
+  
+  gl.shaderSource(shader, shaderData);      // устанавливаем шейдеру его программный код
   gl.compileShader(shader);             // компилируем шейдер
+
   const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
   if (success) {                        // если компиляция прошла успешно - возвращаем шейдер
     return shader;
@@ -55,11 +60,13 @@ function createShader(gl, type, source) {
   gl.deleteShader(shader);
 }
 
-function createProgram(gl, vertexShader, fragmentShader) {
+export function createProgram(gl, vertexShader, fragmentShader) {
+
   const program = gl.createProgram();
   gl.attachShader(program, vertexShader);
   gl.attachShader(program, fragmentShader);
   gl.linkProgram(program);
+
   const success = gl.getProgramParameter(program, gl.LINK_STATUS);
   if (success) {
     return program;
@@ -67,18 +74,4 @@ function createProgram(gl, vertexShader, fragmentShader) {
 
   console.log(gl.getProgramInfoLog(program));
   gl.deleteProgram(program);
-}
-
-export async function loadShaderProgram(gl, vertexShaderFile, fragmentShaderFile) {
-  const vertexShaderSource = await fetch(vertexShaderFile)
-  .then(response => response.text())
-  .then(response => response);
-  const fragmentShaderSource = await fetch(fragmentShaderFile)
-  .then(response => response.text())
-  .then(response => response);
-
-  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-
-  return createProgram(gl, vertexShader, fragmentShader);
 }
