@@ -2,71 +2,137 @@ import { OBJParser } from "./fileLoader.js";
 
 const mat4 = glMatrix.mat4;
 
-export const camera = {
-  translationArray: [0.0, 0.0, 0.0],
-  pointView: [0.0, 0.0, 1.0],
-  rotationArray: [0.0, 0.0, 0.0],
+export class webGlCamera {
+  #gl;
+  #program;
 
-  perspectiveMatrix: mat4.create(),
-  translationMatrix: mat4.create(),
-  rotationMatrix: mat4.create(),
-  viewMatrix: mat4.create(),
+  #viewMatrix;
+  #perspectiveMatrix;
+  #handleKeyDown;
 
-  create: function(gl, program, translationArray, rotationArray) {
-    gl.useProgram(program);
-    const u_View_Matrix_Location = gl.getUniformLocation(program, "u_View_Matrix");
-    const u_Perspective_Matrix_Location = gl.getUniformLocation(program, "u_Perspective_Matrix");
+  #u_Perspective_Matrix_Location;
+  #u_View_Matrix_Location;
 
-    mat4.perspective(this.perspectiveMatrix, 45, gl.canvas.width / gl.canvas.height, 0.1, 8000);
-    gl.uniformMatrix4fv(u_Perspective_Matrix_Location, false, this.perspectiveMatrix);
+  static #activeCamera;
 
-    window.addEventListener("resize", () => {
-      gl.canvas.width = gl.canvas.clientWidth;
-      gl.canvas.height = gl.canvas.clientHeight;
-      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+  constructor(gl, program) {
+    this.#gl = gl;
+    this.#program = program;
 
-      mat4.perspective(this.perspectiveMatrix, 45, gl.canvas.width / gl.canvas.height, 0.1, 2000);
-      gl.uniformMatrix4fv(u_Perspective_Matrix_Location, false, this.perspectiveMatrix);
-    })
+    this.#perspectiveMatrix = mat4.identity(mat4.create());
+    this.#viewMatrix = mat4.identity(mat4.create());
 
-    this.translationArray = translationArray;
-    this.rotationArray = rotationArray;
+    this.handleKeyDown = this.handleKeyDown.bind(this);
 
-    mat4.lookAt(this.viewMatrix, this.translationArray, this.pointView, [0, 1, 0]);
-    gl.uniformMatrix4fv(u_View_Matrix_Location, false, this.viewMatrix);
+    this.#initCamera();
+  }
 
-    document.addEventListener("keydown", (keyCode) => {
-      if(keyCode.key == "ArrowLeft") {
-        this.rotationArray[1] += 0.1
-        this.pointView[2] = this.translationArray[2] + Math.cos(this.rotationArray[1]);
-        this.pointView[0] = this.translationArray[0] + Math.sin(this.rotationArray[1]);
+  #initCamera() {
+    this.#gl.useProgram(this.#program);
+    this.#u_Perspective_Matrix_Location = this.#gl.getUniformLocation(this.#program, "u_Perspective_Matrix");
+    this.#u_View_Matrix_Location = this.#gl.getUniformLocation(this.#program, "u_View_Matrix");
+  }
 
-        mat4.lookAt(this.viewMatrix, translationArray, this.pointView, [0, 1, 0]);
-        gl.uniformMatrix4fv(u_View_Matrix_Location, false, this.viewMatrix);
-      }
+  adaptationPerspective() {
+    this.#gl.canvas.width = this.#gl.canvas.clientWidth * window.devicePixelRatio;
+    this.#gl.canvas.height = this.#gl.canvas.clientHeight * window.devicePixelRatio;
+    this.#gl.viewport(0, 0, this.#gl.canvas.width, this.#gl.canvas.height);
 
-      if(keyCode.key == "ArrowRight") {
-        this.rotationArray[1] -= 0.1
-        this.pointView[2] = this.translationArray[2] + Math.cos(this.rotationArray[1]);
-        this.pointView[0] = this.translationArray[0] + Math.sin(this.rotationArray[1]);
+    mat4.perspective(this.#perspectiveMatrix, 45, this.#gl.canvas.width / this.#gl.canvas.height, 0.1, 8000);
+    this.#gl.uniformMatrix4fv(this.#u_Perspective_Matrix_Location, false, this.#perspectiveMatrix);
+    this.#gl.uniformMatrix4fv(this.#u_View_Matrix_Location, false, this.#viewMatrix);
+  }
 
-        mat4.lookAt(this.viewMatrix, translationArray, this.pointView, [0, 1, 0]);
-        gl.uniformMatrix4fv(u_View_Matrix_Location, false, this.viewMatrix);
-      }
+  #updateViewMatrix(matrix) {
+    mat4.multiply(this.#viewMatrix, matrix, this.#viewMatrix);
+    this.#gl.uniformMatrix4fv(this.#u_View_Matrix_Location, false, this.#viewMatrix);
+  }
 
-      if(keyCode.key == "w") {
-        this.translationArray[0] = this.pointView[0];
-        this.translationArray[1] = this.pointView[1];
-        this.translationArray[2] = this.pointView[2];
+  #moveLocalX(speed) {
+    const translationSpeedMatrix = mat4.create();
+    return mat4.translate(translationSpeedMatrix, translationSpeedMatrix, [speed, 0.0, 0.0]);
+  }
 
-        this.pointView[2] = this.translationArray[2] + Math.cos(this.rotationArray[1]);
-        this.pointView[0] = this.translationArray[0] + Math.sin(this.rotationArray[1]);
+  #moveLocalY(speed) {
+    const translationSpeedMatrix = mat4.create();
+    return mat4.translate(translationSpeedMatrix, translationSpeedMatrix, [0.0, speed, 0.0]);
+  }
 
-        mat4.lookAt(this.viewMatrix, translationArray, this.pointView, [0, 1, 0]);
-        gl.uniformMatrix4fv(u_View_Matrix_Location, false, this.viewMatrix);
-      }
-    })
-  
+  #moveLocalZ(speed) {
+    const translationSpeedMatrix = mat4.create();
+    return mat4.translate(translationSpeedMatrix, translationSpeedMatrix, [0.0, 0.0, speed]);
+  }
+
+  #rotateLocalX(angularVelocity) {
+    const rotateSpeedMatrix = mat4.create();
+    return mat4.rotateX(rotateSpeedMatrix, rotateSpeedMatrix, angularVelocity);
+  }
+
+  #rotateLocalY(angularVelocity) {
+    const rotateSpeedMatrix = mat4.create();
+    return mat4.rotateY(rotateSpeedMatrix, rotateSpeedMatrix, angularVelocity);
+  }
+
+  #rotateLocalZ(angularVelocity) {
+    const rotateSpeedMatrix = mat4.create();
+    return mat4.rotateZ(rotateSpeedMatrix, rotateSpeedMatrix, angularVelocity);
+  }
+
+  handleKeyDown(event) {
+    switch(event.key) {
+      case "w":
+        this.#updateViewMatrix(this.#moveLocalZ(1.0));
+        break;
+      case "s":
+        this.#updateViewMatrix(this.#moveLocalZ(-1.0));
+        break;
+      case "a":
+        this.#updateViewMatrix(this.#moveLocalX(1.0));
+        break;
+      case "d":
+        this.#updateViewMatrix(this.#moveLocalX(-1.0));
+        break;
+      case "Control":
+        this.#updateViewMatrix(this.#moveLocalY(1.0));
+        break;
+      case " ":
+        this.#updateViewMatrix(this.#moveLocalY(-1.0));
+        break;
+      case "ArrowRight":
+        this.#updateViewMatrix(this.#rotateLocalY(0.1));
+        break;
+      case "ArrowLeft":
+        this.#updateViewMatrix(this.#rotateLocalY(-0.1));
+        break;
+      case "ArrowDown":
+        this.#updateViewMatrix(this.#rotateLocalX(0.1));
+        break;
+      case "ArrowUp":
+        this.#updateViewMatrix(this.#rotateLocalX(-0.1));
+        break;
+      case "e":
+        this.#updateViewMatrix(this.#rotateLocalZ(0.1));
+        break;
+      case "q":
+        this.#updateViewMatrix(this.#rotateLocalZ(-0.1));
+        break;
+    }
+  }
+
+  static create(gl, program) {
+    return new webGlCamera(gl, program);
+  }
+
+  static getActiveCamera() {
+    return webGlCamera.#activeCamera;
+  }
+
+  static setActiveCamera(camera) {
+    if(webGlCamera.#activeCamera) {
+      document.removeEventListener("keydown", webGlCamera.#activeCamera.handleKeyDown);
+    }
+    webGlCamera.#activeCamera = camera;
+    document.addEventListener("keydown", camera.handleKeyDown);
   }
 }
 
@@ -100,6 +166,8 @@ export class webGlObject {
   _rotationMatrix;
   _scalingMatrix;
 
+  static currentObjects = [];
+
   constructor(gl, program, modelData, image) {
     this._gl = gl;
     this._program = program;
@@ -123,6 +191,8 @@ export class webGlObject {
 
     this.#initBuffers();
     this.#initTexture();
+
+    webGlObject.currentObjects.push(this);
   }
 
   #initBuffers() {
@@ -214,6 +284,12 @@ export class webGlObject {
 
     this._gl.drawArrays(this._gl.TRIANGLES, 0, this._positions.length);
   }
+
+  static async create(gl, program, modelDataPath, imagePath) {
+          const modelData = await fileReader(modelDataPath);
+          const image = await imageLoader(imagePath);
+          return new webGlObject(gl, program, modelData, image);
+      }
 }
 
 let timeThen = 0;
@@ -222,22 +298,21 @@ const resolutionHTML = document.getElementById("resolution");
 const camPosHTML = document.getElementById("camPos");
 const camRotHTML = document.getElementById("camRot");
 
-export function frameRender(gl, timeNow, renderObjects) {
+export function frameRender(gl, timeNow) {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  renderObjects.forEach(webglObject => webglObject.render());
-  renderObjects[0].moveOrbit(0.01, 0);
-  renderObjects[1].moveOrbit(0.1, 0.01);
-  renderObjects[2].moveOrbit(0.1, 0.005);
-  renderObjects[3].moveOrbit(0.1, 0.02);
-  renderObjects[4].moveOrbit(0.1, 0.004);
+
+  webGlCamera.getActiveCamera().adaptationPerspective();
+
+  webGlObject.currentObjects.forEach(object => {
+    object.render();
+    object.rotationStep();
+  });
 
   timeNow *= 0.001;
   frameRateHTML.innerText = Math.round(1 / (timeNow - timeThen));
   timeThen = timeNow;
 
   resolutionHTML.innerText = `${gl.canvas.width}x${gl.canvas.height}`;
-  camPosHTML.innerText = camera.translationArray;
-  camRotHTML.innerText = camera.rotationArray;
 
-  requestAnimationFrame(timeNow => frameRender(gl, timeNow, renderObjects));
+  requestAnimationFrame(timeNow => frameRender(gl, timeNow));
 }
