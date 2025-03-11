@@ -17,7 +17,7 @@ import { spacePlanetObject } from "./SP_Source/initSPObject.js";
     webGlCamera.setActiveCamera(camera);
 
     const skybox = await webGlObject.create(gl, skyboxProgram, "./Models/skybox.obj", "./Textures/skybox.png");
-    skybox.setScale([4000, 4000, 4000]);
+    skybox.setScale([-4000, -4000, -4000]);
 
     const sun0 = await spacePlanetObject.create(gl, standartProgram, "./Models/sun.obj", "./Textures/sun.jpg");
     sun0.setScale([100, 100, 100]);
