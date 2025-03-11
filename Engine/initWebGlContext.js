@@ -33,8 +33,8 @@ export function createWebGlContext() {
     gl.clearColor(0.0, 0.0, 0.2, 1.0); // установить в качестве цвета очистки буфера цвета чёрный, полная непрозрачность
     gl.enable(gl.DEPTH_TEST); // включает использование буфера глубины
     gl.depthFunc(gl.LEQUAL); // определяет работу буфера глубины: более ближние объекты перекрывают дальние
-    //gl.enable(gl.CULL_FACE);
-    //gl.cullFace(gl.BACK);
+    gl.enable(gl.CULL_FACE);
+    gl.cullFace(gl.BACK);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // очистить буфер цвета и буфер глубины.
 
     document.getElementById("fullscreen-button").addEventListener("click", () => {
