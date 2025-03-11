@@ -59,7 +59,6 @@ export class OBJParser {
       }
     }
     
-    // Проверка и объединение вершинных данных
     if (this.vertexIndices.length === this.texcoordsIndices.length && this.vertexIndices.length === this.normalsIndices.length) {
       for (let i = 0; i < this.vertexIndices.length; i++) {
         this.combinedVertices.push(
@@ -97,8 +96,17 @@ export async function fileReader(filePath) {
   .catch(error => console.error(error));
 }
 
-export async function imageLoader(imagePath) {
-  const image = new Image();
+export function imageLoader(imagePath) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
     image.src = imagePath;
-    return image;
+
+    image.onload = () => {
+      resolve(image);
+    };
+
+    image.onerror = (error) => {
+      reject(new Error(`Ошибка загрузки изображения: ${imagePath}`));
+    };
+  });
 }
