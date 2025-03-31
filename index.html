@@ -1,21 +1,26 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="icon" href="favicon.ico" type="image/x-icon">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebGL Space</title>
+    <link rel="stylesheet" href="styles/styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Planetarium</title>
 </head>
 <body>
-  <input type="button" class="fullscreen-button" value="Full Screen" id="fullscreen-button">
-  <div class="framerate">Frame Rate: <span id="frameRate">0</span></div>
-  <div class="resolution">Resolution: <span id="resolution">0</span></div>
-
-  <canvas id="glcanvas">
-    You browser is not support WebGL!
-  </canvas>
-  <script src="Engine/gl-matrix.js"></script>
-  <script type="module" src="main.js"></script>
-  </body>
+    <div class="header">Space Planetarium</div>
+    <div class="text">
+        Welcome to Space Planetarium!<br>
+        Immerse yourself in the exciting world of space and astronomy with our virtual planetarium.<br>
+        SpacePlanetarium offers a unique experience of observing the stars and planets from the comfort of your own home. Our interactive features and realistic 3D models allow you to explore the universe like never before.<br>
+        What's in store for you:<br>
+        Realistic Starry Sky: Enjoy a view of the night sky at any time of day and anywhere in the world.<br>
+        Interactive tours: Learn more about constellations, planets and other celestial objects with our exciting tours.<br>
+        Astronomical Events: Keep an eye out for upcoming astronomical phenomena such as eclipses, meteor showers, and planetary conjunctions.<br>
+        Educational Resources: Access an extensive library of articles, videos, and educational materials on astronomy and space.<br>
+        Join us at SpacePlanetarium and discover the wonders of the universe!
+    </div>
+    <div class="button-container">
+        <input type="button" class="startButton" value="Start" onclick="location.href='overlay.html'">
+    </div>
+</body>
 </html>
