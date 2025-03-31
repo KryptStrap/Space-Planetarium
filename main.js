@@ -1,48 +1,96 @@
-import { createWebGlContext, createShader, createProgram } from "./Engine/initWebGlContext.js";
-import { frameRender, webGlCamera, webGlObject } from "./Engine/initWebGlObject.js";
-import { spacePlanetObject } from "./SP_Source/initSPObject.js";
+import { initGL, createShader, createProgram } from "./KryptEngine/webgl-context.js";
+import { frameRender, GLCamera, GLModel } from "./KryptEngine/webgl-scene.js";
+import { SpacePlanet } from "./scripts/PlanetGLRenderer.js";
+import {FreeCamera, InputManager} from "./scripts/InputManager.js";
 
 (async function main() {
-    const gl = createWebGlContext();
-    const standartVertexShader = await createShader(gl, gl.VERTEX_SHADER, "Engine/Shaders/standartVertexShader.vert");
-    const skyboxVertexShader = await createShader(gl, gl.VERTEX_SHADER, "Engine/Shaders/skyboxVertexShader.vert");
+    const gl = initGL();
+    const standartVertexShader = await createShader(gl, gl.VERTEX_SHADER, "./KryptEngine/Shaders/standartVertexShader.vert");
+    const skyboxVertexShader = await createShader(gl, gl.VERTEX_SHADER, "./KryptEngine/Shaders/skyboxVertexShader.vert");
 
-    const standartFragmentShader = await createShader(gl, gl.FRAGMENT_SHADER, "Engine/Shaders/standartFragmentShader.frag");
-    const skyboxFragmentShader = await createShader(gl, gl.FRAGMENT_SHADER, "Engine/Shaders/skyboxFragmentShader.frag");
+    const standartFragmentShader = await createShader(gl, gl.FRAGMENT_SHADER, "./KryptEngine/Shaders/standartFragmentShader.frag");
+    const skyboxFragmentShader = await createShader(gl, gl.FRAGMENT_SHADER, "./KryptEngine/Shaders/skyboxFragmentShader.frag");
 
     const standartProgram = createProgram(gl, standartVertexShader, standartFragmentShader);
     const skyboxProgram = createProgram(gl, skyboxVertexShader, skyboxFragmentShader);
 
-    const camera = webGlCamera.create(gl, standartProgram, skyboxProgram, 8000);
-    webGlCamera.setActiveCamera(camera);
+    const camera0 = FreeCamera.create(gl, standartProgram, skyboxProgram);
+    camera0.renderDistance = 100000;
+    camera0.speedMove = 1000;
+    camera0.speedRotation = 4;
+    GLCamera.activeCamera = camera0;
 
-    const skybox = await webGlObject.create(gl, skyboxProgram, "./Models/skybox.obj", "./Textures/skybox.png");
-    skybox.setScale([-4000, -4000, -4000]);
+    InputManager.init();
 
-    const sun0 = await spacePlanetObject.create(gl, standartProgram, "./Models/sun.obj", "./Textures/sun.jpg");
-    sun0.setScale([100, 100, 100]);
-    sun0.setAngularSpeedRotation(0.01);
-    sun0.setTranslation([0.0, 0.0, -1000.0]);
+    const skybox = await GLModel.create(gl, skyboxProgram, "./assets/models/sphere.obj", "./assets/textures/Milky-Way-panorama_4000.jpg");
+    //skybox.setScale([-10000, -10000, -10000]);
 
-    const sun1 = await spacePlanetObject.create(gl, standartProgram, "./Models/sun.obj", "./Textures/sun.jpg");
-    sun1.setScale([25, 25, 25]);
-    sun1.setPareentPlanet(sun0, 1200);
-    sun1.setAngularSpeedRotation(0.01, 0.01);
+    const sun = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/sun.jpg");
+    sun.setScale([100, 100, 100]);
+    sun.setAngularSpeedRotation(0.01, 0);
+    sun.setTranslation([0.0, 0.0, -1000.0]);
 
-    const sun2 = await spacePlanetObject.create(gl, standartProgram, "./Models/sun.obj", "./Textures/sun.jpg");
-    sun2.setScale([25, 25, 25]);
-    sun2.setPareentPlanet(sun0, 2400);
-    sun2.setAngularSpeedRotation(0.1, 0.005);
+    const mercury = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/mercury.jpg");
+    mercury.setScale([25, 25, 25]);
+    mercury.setPareentPlanet(sun, 1200);
+    mercury.setAngularSpeedRotation(0.01, 0.01);
 
-    const sun3 = await spacePlanetObject.create(gl, standartProgram, "./Models/sun.obj", "./Textures/sun.jpg");
-    sun3.setScale([15, 15, 15])
-    sun3.setPareentPlanet(sun1, 200);
-    sun3.setAngularSpeedRotation(0.1, 0.02);
+    const venus = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/venus.jpg")
+    venus.setScale([25, 25, 25]);
+    venus.setPareentPlanet(sun, 2400);
+    venus.setAngularSpeedRotation(0.01, 0.005);
 
-    const sun4 = await spacePlanetObject.create(gl, standartProgram, "./Models/sun.obj", "./Textures/sun.jpg");
-    sun4.setScale([15, 15, 15])
-    sun4.setPareentPlanet(sun1, 100);
-    sun4.setAngularSpeedRotation(0.1, 0.004);
+    const earth = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/Earth Map.jpg")
+    earth.setScale([25, 25, 25]);
+    earth.setPareentPlanet(sun, 2800);
+    earth.setAngularSpeedRotation(0.01, 0.0025);
 
-    requestAnimationFrame(timeNow => frameRender(gl, timeNow, spacePlanetObject.runRotation));
-})()
+    const earthClouds = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/Earth-Clouds2700.jpg");
+    earthClouds.setScale([26, 26, 26]);
+    earthClouds.setPareentPlanet(earth, 0);
+    earthClouds.setAngularSpeedRotation(0.02, 0);
+    earthClouds.color = [1.0, 1.0, 1.0, 0.4];
+
+    const moon = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/moon_map_002.jpg");
+    moon.setScale([10, 10, 10]);
+    moon.setPareentPlanet(earth, 200);
+    moon.setAngularSpeedRotation(0.01, 0.01);
+
+    const mars = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/mars.jpg")
+    mars.setScale([15, 15, 15]);
+    mars.setPareentPlanet(sun, 3200);
+    mars.setAngularSpeedRotation(0.01, 0.00125);
+
+    const jupiter = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/jupiter.jpg")
+    jupiter.setScale([50, 50, 50]);
+    jupiter.setPareentPlanet(sun, 4000);
+    jupiter.setAngularSpeedRotation(0.01, 0.000675);
+
+    const saturn = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/saturn.jpg")
+    saturn.setScale([45, 45, 45]);
+    saturn.setPareentPlanet(sun, 5000);
+    saturn.setAngularSpeedRotation(0.01, 0.000300);
+
+    const uranus = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/uranus.jpg")
+    uranus.setScale([35, 35, 35]);
+    uranus.setPareentPlanet(sun, 6000);
+    uranus.setAngularSpeedRotation(0.01, 0.000150);
+
+    const neptune = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/neptune.jpg")
+    neptune.setScale([40, 40, 40]);
+    neptune.setPareentPlanet(sun, 7000);
+    neptune.setAngularSpeedRotation(0.01, 0.000075);
+
+    const pluto = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/pluto.jpg")
+    pluto.setScale([10, 10, 10]);
+    pluto.setPareentPlanet(sun, 8000);
+    pluto.setAngularSpeedRotation(0.01, 0.000030);
+
+    const frameRateHTML = document.querySelector(".info");
+
+    requestAnimationFrame(timeNow => frameRender(gl, timeNow, deltaTime => {
+        SpacePlanet.currentObjects.forEach(object => object.rotationStep(deltaTime, 8));
+        FreeCamera.currentObjects.forEach(object => object.transformEvents(deltaTime));
+        frameRateHTML.innerText = `FPS: ${Math.round(1 / deltaTime)}\n Resolution: ${gl.canvas.width}x${gl.canvas.height}`;
+    }));
+})();
