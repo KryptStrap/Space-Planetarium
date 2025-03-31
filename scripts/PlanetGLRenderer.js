@@ -31,25 +31,25 @@ export class SpacePlanet extends GLModel {
 
     rotationStep(deltaTime, timeAcceleration) {
         if(this.#parentPlanet) {
-            this._translationArray[0] = this.#parentPlanet._translationArray[0] + this.#distanceFromParent * Math.sin(this.#revolution);
-            this._translationArray[2] = this.#parentPlanet._translationArray[2] + this.#distanceFromParent * Math.cos(this.#revolution);
+            this._positionArray[0] = this.#parentPlanet._positionArray[0] + this.#distanceFromParent * Math.sin(this.#revolution);
+            this._positionArray[2] = this.#parentPlanet._positionArray[2] + this.#distanceFromParent * Math.cos(this.#revolution);
             this.#revolution += this.#orbitalRotationSpeed * deltaTime * timeAcceleration;
 
             this._rotationArray[1] += this.#axisRotationSpeed * deltaTime * timeAcceleration;
 
-            glMatrix.mat4.translate(this._translationMatrix, glMatrix.mat4.create(), this._translationArray);
+            glMatrix.mat4.translate(this._positionMatrix, glMatrix.mat4.create(), this._positionArray);
             glMatrix.mat4.rotateY(this._rotationMatrix, glMatrix.mat4.create(), this._rotationArray[1]);
         
             this._gl.useProgram(this._program);
-            this._gl.uniformMatrix4fv(this._u_Translation_Matrix_Location, false, this._translationMatrix);
-            this._gl.uniformMatrix4fv(this._u_Rotation_Matrix_Location, false, this._rotationMatrix);
+            this._gl.uniformMatrix4fv(this._uPositionMatrixLocation, false, this._positionMatrix);
+            this._gl.uniformMatrix4fv(this._uRotationMatrixLocation, false, this._rotationMatrix);
         } else {
             this._rotationArray[1] += this.#axisRotationSpeed * deltaTime * timeAcceleration;
 
             glMatrix.mat4.rotateY(this._rotationMatrix, glMatrix.mat4.create(), this._rotationArray[1]);
             
             this._gl.useProgram(this._program);
-            this._gl.uniformMatrix4fv(this._u_Rotation_Matrix_Location, false, this._rotationMatrix);
+            this._gl.uniformMatrix4fv(this._uRotationMatrixLocation, false, this._rotationMatrix);
         }
     }
 

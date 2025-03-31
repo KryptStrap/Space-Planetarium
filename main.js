@@ -23,66 +23,65 @@ import {FreeCamera, InputManager} from "./scripts/InputManager.js";
     InputManager.init();
 
     const skybox = await GLModel.create(gl, skyboxProgram, "./assets/models/sphere.obj", "./assets/textures/Milky-Way-panorama_4000.jpg");
-    //skybox.setScale([-10000, -10000, -10000]);
 
     const sun = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/sun.jpg");
-    sun.setScale([100, 100, 100]);
+    sun.scale = [100, 100, 100];
     sun.setAngularSpeedRotation(0.01, 0);
-    sun.setTranslation([0.0, 0.0, -1000.0]);
+    sun.position = [0.0, 0.0, -1000.0];
 
     const mercury = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/mercury.jpg");
-    mercury.setScale([25, 25, 25]);
+    mercury.scale = [25, 25, 25];
     mercury.setPareentPlanet(sun, 1200);
     mercury.setAngularSpeedRotation(0.01, 0.01);
 
     const venus = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/venus.jpg")
-    venus.setScale([25, 25, 25]);
+    venus.scale = [25, 25, 25];
     venus.setPareentPlanet(sun, 2400);
     venus.setAngularSpeedRotation(0.01, 0.005);
 
     const earth = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/Earth Map.jpg")
-    earth.setScale([25, 25, 25]);
+    earth.scale = [25, 25, 25];
     earth.setPareentPlanet(sun, 2800);
     earth.setAngularSpeedRotation(0.01, 0.0025);
 
     const earthClouds = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/Earth-Clouds2700.jpg");
-    earthClouds.setScale([26, 26, 26]);
+    earthClouds.scale = [26, 26, 26];
     earthClouds.setPareentPlanet(earth, 0);
     earthClouds.setAngularSpeedRotation(0.02, 0);
     earthClouds.color = [1.0, 1.0, 1.0, 0.4];
 
     const moon = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/moon_map_002.jpg");
-    moon.setScale([10, 10, 10]);
+    moon.scale = [10, 10, 10];
     moon.setPareentPlanet(earth, 200);
     moon.setAngularSpeedRotation(0.01, 0.01);
 
     const mars = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/mars.jpg")
-    mars.setScale([15, 15, 15]);
+    mars.scale = [15, 15, 15];
     mars.setPareentPlanet(sun, 3200);
     mars.setAngularSpeedRotation(0.01, 0.00125);
 
     const jupiter = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/jupiter.jpg")
-    jupiter.setScale([50, 50, 50]);
+    jupiter.scale = [50, 50, 50];
     jupiter.setPareentPlanet(sun, 4000);
     jupiter.setAngularSpeedRotation(0.01, 0.000675);
 
     const saturn = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/saturn.jpg")
-    saturn.setScale([45, 45, 45]);
+    saturn.scale = [45, 45, 45];
     saturn.setPareentPlanet(sun, 5000);
     saturn.setAngularSpeedRotation(0.01, 0.000300);
 
     const uranus = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/uranus.jpg")
-    uranus.setScale([35, 35, 35]);
+    uranus.scale = [35, 35, 35];
     uranus.setPareentPlanet(sun, 6000);
     uranus.setAngularSpeedRotation(0.01, 0.000150);
 
     const neptune = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/neptune.jpg")
-    neptune.setScale([40, 40, 40]);
+    neptune.scale = [40, 40, 40];
     neptune.setPareentPlanet(sun, 7000);
     neptune.setAngularSpeedRotation(0.01, 0.000075);
 
     const pluto = await SpacePlanet.create(gl, standartProgram, "./assets/models/sphere.obj", "./assets/textures/pluto.jpg")
-    pluto.setScale([10, 10, 10]);
+    pluto.scale = [10, 10, 10];
     pluto.setPareentPlanet(sun, 8000);
     pluto.setAngularSpeedRotation(0.01, 0.000030);
 

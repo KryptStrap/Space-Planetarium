@@ -14,11 +14,11 @@ export class GLCamera {
   _renderDistanceMatrix = mat4.identity(mat4.create());
   _renderDistance = 1;
 
-  _u_Perspective_Matrix_Location;
-  _u_Perspective_Skybox_Matrix_Location;
-  _u_RenderDistance_Skybox_Matrix_Location
-  _u_View_Matrix_Location;
-  _u_View_Skybox_Matrix_Location;
+  _uPerspectiveMatrixLocation;
+  _uPerspectiveSkyboxMatrixLocation;
+  _uRenderDistanceSkyboxMatrixLocation
+  _uViewMatrixLocation;
+  _uViewSkyboxMatrixLocation;
 
 
   static currentObjects = [];
@@ -41,20 +41,20 @@ export class GLCamera {
     mat4.perspective(this._perspectiveMatrix, 45, this._gl.canvas.width / this._gl.canvas.height, 0.1, this.renderDistance * Math.sqrt(3));
     
     this._gl.useProgram(this._program);
-    this._u_View_Matrix_Location = this._gl.getUniformLocation(this._program, "u_View_Matrix");
-    this._u_Perspective_Matrix_Location = this._gl.getUniformLocation(this._program, "u_Perspective_Matrix");
+    this._uViewMatrixLocation = this._gl.getUniformLocation(this._program, "u_ViewMatrix");
+    this._uPerspectiveMatrixLocation = this._gl.getUniformLocation(this._program, "u_PerspectiveMatrix");
 
-    this._gl.uniformMatrix4fv(this._u_View_Matrix_Location, false, this._viewMatrix);
-    this._gl.uniformMatrix4fv(this._u_Perspective_Matrix_Location, false, this._perspectiveMatrix);
+    this._gl.uniformMatrix4fv(this._uViewMatrixLocation, false, this._viewMatrix);
+    this._gl.uniformMatrix4fv(this._uPerspectiveMatrixLocation, false, this._perspectiveMatrix);
     
     this._gl.useProgram(this._skyboxProgram);
-    this._u_View_Skybox_Matrix_Location = this._gl.getUniformLocation(this._skyboxProgram, "u_View_Skybox_Matrix");
-    this._u_Perspective_Skybox_Matrix_Location = this._gl.getUniformLocation(this._skyboxProgram, "u_Perspective_Skybox_Matrix");
-    this._u_RenderDistance_Skybox_Matrix_Location = this._gl.getUniformLocation(this._skyboxProgram, "u_RenderDistance_Skybox_Matrix");
+    this._uViewSkyboxMatrixLocation = this._gl.getUniformLocation(this._skyboxProgram, "u_ViewSkyboxMatrix");
+    this._uPerspectiveSkyboxMatrixLocation = this._gl.getUniformLocation(this._skyboxProgram, "u_PerspectiveSkyboxMatrix");
+    this._uRenderDistanceSkyboxMatrixLocation = this._gl.getUniformLocation(this._skyboxProgram, "u_RenderDistanceSkyboxMatrix");
 
-    this._gl.uniformMatrix4fv(this._u_View_Skybox_Matrix_Location, false, this._viewSkyboxMatrix);
-    this._gl.uniformMatrix4fv(this._u_Perspective_Skybox_Matrix_Location, false, this._perspectiveMatrix);
-    this._gl.uniformMatrix4fv(this._u_RenderDistance_Skybox_Matrix_Location, false, mat4.scale(this._renderDistanceMatrix, this._renderDistanceMatrix, [this._renderDistance, this._renderDistance, this._renderDistance]));
+    this._gl.uniformMatrix4fv(this._uViewSkyboxMatrixLocation, false, this._viewSkyboxMatrix);
+    this._gl.uniformMatrix4fv(this._uPerspectiveSkyboxMatrixLocation, false, this._perspectiveMatrix);
+    this._gl.uniformMatrix4fv(this._uRenderDistanceSkyboxMatrixLocation, false, mat4.scale(this._renderDistanceMatrix, this._renderDistanceMatrix, [this._renderDistance, this._renderDistance, this._renderDistance]));
   }
 
   updatePerspective() {
@@ -65,10 +65,10 @@ export class GLCamera {
 
       mat4.perspective(this._perspectiveMatrix, 45, this._gl.canvas.width / this._gl.canvas.height, 0.1, this.renderDistance * Math.sqrt(3));
       this._gl.useProgram(this._program);
-      this._gl.uniformMatrix4fv(this._u_Perspective_Matrix_Location, false, this._perspectiveMatrix);
+      this._gl.uniformMatrix4fv(this._uPerspectiveMatrixLocation, false, this._perspectiveMatrix);
 
       this._gl.useProgram(this._skyboxProgram);
-      this._gl.uniformMatrix4fv(this._u_Perspective_Skybox_Matrix_Location, false, this._perspectiveMatrix);
+      this._gl.uniformMatrix4fv(this._uPerspectiveSkyboxMatrixLocation, false, this._perspectiveMatrix);
     }
   }
 
@@ -78,7 +78,7 @@ export class GLCamera {
 
   set renderDistance(value) {
     this._renderDistance = value;
-    this._gl.uniformMatrix4fv(this._u_RenderDistance_Skybox_Matrix_Location, false, mat4.scale(this._renderDistanceMatrix, this._renderDistanceMatrix, [-this._renderDistance, -this._renderDistance, -this._renderDistance]));
+    this._gl.uniformMatrix4fv(this._uRenderDistanceSkyboxMatrixLocation, false, mat4.scale(this._renderDistanceMatrix, this._renderDistanceMatrix, [-this._renderDistance, -this._renderDistance, -this._renderDistance]));
   }
 
   static create(gl, program, skyboxProgram) {
@@ -94,30 +94,30 @@ export class GLModel {
 
   _positions;
   _indices;
-  _positionAttributeLocation;
+  _aPositionLocation;
   _positionBuffer;
 
   _texcoords;
-  _texcoordAttributeLocation;
+  _aTexcoordLocation;
 
   _texture;
 
   _image;
   color = [1.0, 1.0, 1.0, 1.0];
 
-  _u_Scaling_Matrix_Location;
-  _u_Rotation_Matrix_Location;
-  _u_Translation_Matrix_Location;
+  _uPositionMatrixLocation;
+  _uRotationMatrixLocation;
+  _uScalingMatrixLocation;
 
-  _u_Color_Vector4_Location;
+  _uColorLocation;
 
-  _translationArray = [0.0, 0.0, 0.0];
+  _positionArray = [0.0, 0.0, 0.0];
   _rotationArray = [0.0, 0.0, 0.0,];
-  _scalingArray = [1.0, 1.0, 1.0];
+  _scaleArray = [1.0, 1.0, 1.0];
 
-  _translationMatrix = mat4.identity(mat4.create());
+  _positionMatrix = mat4.identity(mat4.create());
   _rotationMatrix = mat4.identity(mat4.create());
-  _scalingMatrix = mat4.identity(mat4.create());
+  _scaleMatrix = mat4.identity(mat4.create());
 
   static currentObjects = [];
 
@@ -142,24 +142,24 @@ export class GLModel {
 
   #initBuffers() {
     this._gl.useProgram(this._program);
-    this._positionAttributeLocation = this._gl.getAttribLocation(this._program, "a_Position");
+    this._aPositionLocation = this._gl.getAttribLocation(this._program, "a_Position");
     this._vertexBuffer = this._gl.createBuffer();
     this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._vertexBuffer);
     this._gl.bufferData(this._gl.ARRAY_BUFFER, new Float32Array(this._positions), this._gl.STATIC_DRAW);
 
-    this._texcoordAttributeLocation = this._gl.getAttribLocation(this._program, "a_texcoord");
+    this._aTexcoordLocation = this._gl.getAttribLocation(this._program, "a_Texcoord");
 
-    this._normalAttributeLocation = this._gl.getAttribLocation(this._program, "a_normal");
+    this._aNormalLocation = this._gl.getAttribLocation(this._program, "a_Normal");
 
     //this._indexBuffer = this._gl.createBuffer();
     //this._gl.bindBuffer(this._gl.ELEMENT_ARRAY_BUFFER, this._indexBuffer);
     //this._gl.bufferData(this._gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this._indices), this._gl.STATIC_DRAW);
 
-    this._u_Scaling_Matrix_Location = this._gl.getUniformLocation(this._program, "u_Scaling_Matrix");
-    this._u_Rotation_Matrix_Location = this._gl.getUniformLocation(this._program, "u_Rotation_Matrix");
-    this._u_Translation_Matrix_Location =  this._gl.getUniformLocation(this._program, "u_Translation_Matrix");
+    this._uPositionMatrixLocation =  this._gl.getUniformLocation(this._program, "u_PositionMatrix");
+    this._uRotationMatrixLocation = this._gl.getUniformLocation(this._program, "u_RotationMatrix");
+    this._uScaleMatrixLocation = this._gl.getUniformLocation(this._program, "u_ScaleMatrix");
 
-    this._u_Color_Vector4_Location =  this._gl.getUniformLocation(this._program, "u_color");
+    this._uColorLocation =  this._gl.getUniformLocation(this._program, "u_Color");
   }
 
   #initTexture() {
@@ -177,21 +177,33 @@ export class GLModel {
     
   }
 
-  setTranslation(translationArray) {
-    this._translationArray = translationArray;
-    mat4.translate(this._translationMatrix, this._translationMatrix, this._translationArray);
+  get position() {
+    return this._positionArray;
   }
 
-  setRotation(rotationArray) {
+  set position(positionArray) {
+    this._positionArray = positionArray;
+    mat4.translate(this._positionMatrix, this._positionMatrix, this._positionArray);
+  }
+
+  get rotation() {
+    return this._rotationArray;
+  }
+
+  set rotation(rotationArray) {
     this._rotationArray = rotationArray;
     mat4.rotateX(this._rotationMatrix, this._rotationMatrix, this._rotationArray[0]);
     mat4.rotateY(this._rotationMatrix, this._rotationMatrix, this._rotationArray[1]);
     mat4.rotateZ(this._rotationMatrix, this._rotationMatrix, this._rotationArray[2]);
   }
 
-  setScale(scalingArray) {
-    this._scalingArray = scalingArray;
-    mat4.scale(this._scalingMatrix, this._scalingMatrix, this._scalingArray);
+  get scale() {
+    return this._scaleArray;
+  }
+
+  set scale(scaleArray) {
+    this._scaleArray = scaleArray;
+    mat4.scale(this._scaleMatrix, this._scaleMatrix, this._scaleArray);
   }
 
   render() {
@@ -199,16 +211,16 @@ export class GLModel {
     
     this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._vertexBuffer);
 
-    this._gl.vertexAttribPointer(this._positionAttributeLocation, 3, this._gl.FLOAT, false, this._stride, 0);
-    this._gl.enableVertexAttribArray(this._positionAttributeLocation);
+    this._gl.vertexAttribPointer(this._aPositionLocation, 3, this._gl.FLOAT, false, this._stride, 0);
+    this._gl.enableVertexAttribArray(this._aPositionLocation);
 
     // Текстура
-    this._gl.vertexAttribPointer(this._texcoordAttributeLocation, 2, this._gl.FLOAT, false, this._stride, 3 * Float32Array.BYTES_PER_ELEMENT);
-    this._gl.enableVertexAttribArray(this._texcoordAttributeLocation);
+    this._gl.vertexAttribPointer(this._aTexcoordLocation, 2, this._gl.FLOAT, false, this._stride, 3 * Float32Array.BYTES_PER_ELEMENT);
+    this._gl.enableVertexAttribArray(this._aTexcoordLocation);
 
     // Нормали (если используются)
-    this._gl.vertexAttribPointer(this._normalAttributeLocation, 3, this._gl.FLOAT, false, this._stride, 5 * Float32Array.BYTES_PER_ELEMENT);
-    this._gl.enableVertexAttribArray(this._normalAttributeLocation);
+    this._gl.vertexAttribPointer(this._aNormalLocation, 3, this._gl.FLOAT, false, this._stride, 5 * Float32Array.BYTES_PER_ELEMENT);
+    this._gl.enableVertexAttribArray(this._aNormalLocation);
 
     this._gl.activeTexture(this._gl.TEXTURE0);
     this._gl.bindTexture(this._gl.TEXTURE_2D, this._texture);
@@ -217,10 +229,10 @@ export class GLModel {
 
     //this._gl.drawElements(this._gl.TRIANGLES, this._indices.length, this._gl.UNSIGNED_SHORT, 0);
 
-    this._gl.uniformMatrix4fv(this._u_Rotation_Matrix_Location, false, this._rotationMatrix);
-    this._gl.uniformMatrix4fv(this._u_Translation_Matrix_Location, false, this._translationMatrix);
-    this._gl.uniformMatrix4fv(this._u_Scaling_Matrix_Location, false, this._scalingMatrix);
-    this._gl.uniform4fv(this._u_Color_Vector4_Location, this.color);
+    this._gl.uniformMatrix4fv(this._uPositionMatrixLocation, false, this._positionMatrix);
+    this._gl.uniformMatrix4fv(this._uRotationMatrixLocation, false, this._rotationMatrix);
+    this._gl.uniformMatrix4fv(this._uScaleMatrixLocation, false, this._scaleMatrix);
+    this._gl.uniform4fv(this._uColorLocation, this.color);
 
     this._gl.drawArrays(this._gl.TRIANGLES, 0, this._positions.length / 8);
   }

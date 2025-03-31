@@ -131,13 +131,13 @@ export class FreeCamera extends GLCamera {
   #updateViewMatrix(matrix) {
     mat4.multiply(this._viewMatrix, matrix, this._viewMatrix);
     this._gl.useProgram(this._program);
-    this._gl.uniformMatrix4fv(this._u_View_Matrix_Location, false, this._viewMatrix);
+    this._gl.uniformMatrix4fv(this._uViewMatrixLocation, false, this._viewMatrix);
   };
     
   #updateViewSkyboxMatrix(matrix) {
     mat4.multiply(this._viewSkyboxMatrix, matrix, this._viewSkyboxMatrix);
     this._gl.useProgram(this._skyboxProgram);
-    this._gl.uniformMatrix4fv(this._u_View_Skybox_Matrix_Location, false, this._viewSkyboxMatrix);
+    this._gl.uniformMatrix4fv(this._uViewSkyboxMatrixLocation, false, this._viewSkyboxMatrix);
   };
     
   #moveLocalX(speed) {
