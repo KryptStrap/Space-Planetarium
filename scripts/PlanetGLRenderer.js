@@ -1,0 +1,61 @@
+import {GLModel} from "../KryptEngine/webgl-scene.js";
+import { fileReader, imageLoader } from "../KryptEngine/fileLoader.js";
+
+export class SpacePlanet extends GLModel {
+    #parentPlanet;
+    #distanceFromParent = 0;
+    #revolution = 0;
+
+    #axisRotationSpeed = 0;
+    #orbitalRotationSpeed = 0;
+
+    static currentObjects = [];
+
+    constructor(gl, program, modelData, image,) {
+        super(gl, program, modelData, image);
+        
+        this.#revolution = 0;
+
+        SpacePlanet.currentObjects.push(this);
+    }
+
+    setPareentPlanet(parrentPlanet, distanceFromParent) {
+        this.#parentPlanet = parrentPlanet;
+        this.#distanceFromParent = distanceFromParent;
+    }
+
+    setAngularSpeedRotation(axisRotationSpeed, orbitalRotationSpeed) {
+        this.#axisRotationSpeed = axisRotationSpeed;
+        this.#orbitalRotationSpeed = orbitalRotationSpeed;
+    }
+
+    rotationStep(deltaTime, timeAcceleration) {
+        if(this.#parentPlanet) {
+            this._translationArray[0] = this.#parentPlanet._translationArray[0] + this.#distanceFromParent * Math.sin(this.#revolution);
+            this._translationArray[2] = this.#parentPlanet._translationArray[2] + this.#distanceFromParent * Math.cos(this.#revolution);
+            this.#revolution += this.#orbitalRotationSpeed * deltaTime * timeAcceleration;
+
+            this._rotationArray[1] += this.#axisRotationSpeed * deltaTime * timeAcceleration;
+
+            glMatrix.mat4.translate(this._translationMatrix, glMatrix.mat4.create(), this._translationArray);
+            glMatrix.mat4.rotateY(this._rotationMatrix, glMatrix.mat4.create(), this._rotationArray[1]);
+        
+            this._gl.useProgram(this._program);
+            this._gl.uniformMatrix4fv(this._u_Translation_Matrix_Location, false, this._translationMatrix);
+            this._gl.uniformMatrix4fv(this._u_Rotation_Matrix_Location, false, this._rotationMatrix);
+        } else {
+            this._rotationArray[1] += this.#axisRotationSpeed * deltaTime * timeAcceleration;
+
+            glMatrix.mat4.rotateY(this._rotationMatrix, glMatrix.mat4.create(), this._rotationArray[1]);
+            
+            this._gl.useProgram(this._program);
+            this._gl.uniformMatrix4fv(this._u_Rotation_Matrix_Location, false, this._rotationMatrix);
+        }
+    }
+
+    static async create(gl, program, modelDataPath, imagePath, radius, parrentPlanet, distanceFromParent) {
+        const modelData = await fileReader(modelDataPath);
+        const image = await imageLoader(imagePath);
+        return new SpacePlanet(gl, program, modelData, image, radius, parrentPlanet, distanceFromParent);
+    }
+}
