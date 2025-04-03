@@ -1,15 +1,12 @@
 export class OBJParser {
-  constructor() {
-    this.vertices = [];
-    this.texcoords = [];
-    this.normals = [];
+  #vertices = [];
+  #texcoords = [];
+  #normals = [];
 
-    this.vertexIndices = [];
-    this.texcoordsIndices = [];
-    this.normalsIndices = [];
-
-    this.combinedVertices = [];
-  }
+  #vertexIndices = [];
+  #texcoordsIndices = [];
+  #normalsIndices = [];
+  #combinedVertices = [];
 
   parse(data) {
     const lines = data.split('\n');
@@ -20,7 +17,7 @@ export class OBJParser {
 
       switch (parts[0]) {
         case 'v':
-          this.vertices.push([
+          this.#vertices.push([
             parseFloat(parts[1]),
             parseFloat(parts[2]),
             parseFloat(parts[3])
@@ -28,7 +25,7 @@ export class OBJParser {
           break;
 
         case 'vn':
-          this.normals.push([
+          this.#normals.push([
             parseFloat(parts[1]),
             parseFloat(parts[2]),
             parseFloat(parts[3])
@@ -36,7 +33,7 @@ export class OBJParser {
           break;
 
         case 'vt':
-          this.texcoords.push([
+          this.#texcoords.push([
             parseFloat(parts[1]),
             parseFloat(parts[2])
           ]);
@@ -59,12 +56,12 @@ export class OBJParser {
       }
     }
     
-    if (this.vertexIndices.length === this.texcoordsIndices.length && this.vertexIndices.length === this.normalsIndices.length) {
-      for (let i = 0; i < this.vertexIndices.length; i++) {
-        this.combinedVertices.push(
-          ...this.vertices[this.vertexIndices[i]],
-          ...this.texcoords[this.texcoordsIndices[i]],
-          ...this.normals[this.normalsIndices[i]]
+    if (this.#vertexIndices.length === this.#texcoordsIndices.length && this.#vertexIndices.length === this.#normalsIndices.length) {
+      for (let i = 0; i < this.#vertexIndices.length; i++) {
+        this.#combinedVertices.push(
+          ...this.#vertices[this.#vertexIndices[i]],
+          ...this.#texcoords[this.#texcoordsIndices[i]],
+          ...this.#normals[this.#normalsIndices[i]]
         );
       }
     }
@@ -73,27 +70,25 @@ export class OBJParser {
   triangulateFace(faceVertices, faceTextures, faceNormals) {
     if (faceVertices.length > 3) {
       for (let i = 1; i < faceVertices.length - 1; i++) {
-        this.vertexIndices.push(faceVertices[0], faceVertices[i], faceVertices[i + 1]);
-        this.texcoordsIndices.push(faceTextures[0], faceTextures[i], faceTextures[i + 1]);
-        this.normalsIndices.push(faceNormals[0], faceNormals[i], faceNormals[i + 1]);
+        this.#vertexIndices.push(faceVertices[0], faceVertices[i], faceVertices[i + 1]);
+        this.#texcoordsIndices.push(faceTextures[0], faceTextures[i], faceTextures[i + 1]);
+        this.#normalsIndices.push(faceNormals[0], faceNormals[i], faceNormals[i + 1]);
       }
     } else {
-      this.vertexIndices.push(...faceVertices);
-      this.texcoordsIndices.push(...faceTextures);
-      this.normalsIndices.push(...faceNormals);
+      this.#vertexIndices.push(...faceVertices);
+      this.#texcoordsIndices.push(...faceTextures);
+      this.#normalsIndices.push(...faceNormals);
     }
   }
 
-  getCombinedVertices() {
-    return this.combinedVertices.flat();
+  get combinedVertices() {
+    return this.#combinedVertices.flat();
   }
 }
 
 export async function fileReader(filePath) {
-  return fetch(filePath)
-  .then(responce => responce.text())
-  .then(responce => responce)
-  .catch(error => console.error(error));
+  const responce = await fetch(filePath);
+  return await responce.text();
 }
 
 export function imageLoader(imagePath) {
@@ -109,4 +104,10 @@ export function imageLoader(imagePath) {
       reject(new Error(`Ошибка загрузки изображения: ${imagePath}`));
     };
   });
+};
+
+export async function parseObj(modelPath) {
+  const model = new OBJParser();
+  model.parse(await fileReader(modelPath));
+  return model.combinedVertices;
 }
