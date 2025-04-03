@@ -6,6 +6,7 @@ in vec2 a_Texcoord;
 in vec3 a_Normal;
 
 out vec2 v_Texcoord;
+out vec3 v_Normal;
 
 uniform mat4 u_PositionMatrix;
 uniform mat4 u_RotationMatrix;
@@ -19,4 +20,5 @@ void main() {
     gl_Position = u_PerspectiveMatrix * u_ViewMatrix * transformMatrix * a_Position;
     
     v_Texcoord = vec2(a_Texcoord.x, 1.0 - a_Texcoord.y);
+    v_Normal = a_Normal;
     }

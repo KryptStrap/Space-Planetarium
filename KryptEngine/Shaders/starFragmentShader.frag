@@ -10,5 +10,7 @@ uniform sampler2D u_Texture;
 uniform vec4 u_Color;
 
 void main() {
-    outColor = texture(u_Texture, v_Texcoord) * u_Color;
+    vec3 finalColor = texture(u_Texture, v_Texcoord).rgb * vec3(2.5, 2.5, 2.5);
+
+    outColor = vec4(finalColor, 1.0) * u_Color;
 }
