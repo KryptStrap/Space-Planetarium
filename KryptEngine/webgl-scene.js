@@ -1,108 +1,124 @@
-import { OBJParser } from "./fileLoader.js";
-import { fileReader, imageLoader } from "./fileLoader.js";
-
 const mat4 = glMatrix.mat4;
 
 export class GLCamera {
   _gl;
-  _program;
+  _programs;
   _skyboxProgram;
 
   _viewMatrix = mat4.identity(mat4.create());
   _viewSkyboxMatrix = mat4.identity(mat4.create());
   _perspectiveMatrix = mat4.identity(mat4.create());
   _renderDistanceMatrix = mat4.identity(mat4.create());
-  _renderDistance = 1;
+  renderDistance = 1;
 
-  _uPerspectiveMatrixLocation;
+
+  _uniformsArray = [];
   _uPerspectiveSkyboxMatrixLocation;
   _uRenderDistanceSkyboxMatrixLocation
-  _uViewMatrixLocation;
   _uViewSkyboxMatrixLocation;
 
 
   static currentObjects = [];
   static activeCamera;
 
-  constructor(gl, program, skyboxProgram) {
+  constructor(gl, programs, skyboxProgram) {
     this._gl = gl;
-    this._program = program;
+    this._programs = programs;
     this._skyboxProgram = skyboxProgram;
 
-    this.#initCamera();
+    this.#initGLCamera();
     GLCamera.currentObjects.push(this);
   }
 
-  #initCamera() {
+  #initGLCamera() {
     this._gl.canvas.width = Math.round(this._gl.canvas.clientWidth * window.devicePixelRatio);
     this._gl.canvas.height = Math.round(this._gl.canvas.clientHeight * window.devicePixelRatio);
     this._gl.viewport(0, 0, this._gl.canvas.width, this._gl.canvas.height);
 
     mat4.perspective(this._perspectiveMatrix, 45, this._gl.canvas.width / this._gl.canvas.height, 0.1, this.renderDistance * Math.sqrt(3));
-    
-    this._gl.useProgram(this._program);
-    this._uViewMatrixLocation = this._gl.getUniformLocation(this._program, "u_ViewMatrix");
-    this._uPerspectiveMatrixLocation = this._gl.getUniformLocation(this._program, "u_PerspectiveMatrix");
 
-    this._gl.uniformMatrix4fv(this._uViewMatrixLocation, false, this._viewMatrix);
-    this._gl.uniformMatrix4fv(this._uPerspectiveMatrixLocation, false, this._perspectiveMatrix);
+    for(const program of this._programs) {
+      this._gl.useProgram(program);
+
+      this._uniformsArray.push({
+        program: program,
+        uViewMatrixLocation: this._gl.getUniformLocation(program, "u_ViewMatrix"),
+        uPerspectiveMatrixLocation: this._gl.getUniformLocation(program, "u_PerspectiveMatrix")
+      });
+    }
+    
+    /*this._gl.useProgram(this._program);
+    this._uViewMatrixLocationArray = this._gl.getUniformLocation(this._program, "u_ViewMatrix");
+    this._uPerspectiveMatrixLocationArray = this._gl.getUniformLocation(this._program, "u_PerspectiveMatrix");*/
     
     this._gl.useProgram(this._skyboxProgram);
     this._uViewSkyboxMatrixLocation = this._gl.getUniformLocation(this._skyboxProgram, "u_ViewSkyboxMatrix");
     this._uPerspectiveSkyboxMatrixLocation = this._gl.getUniformLocation(this._skyboxProgram, "u_PerspectiveSkyboxMatrix");
     this._uRenderDistanceSkyboxMatrixLocation = this._gl.getUniformLocation(this._skyboxProgram, "u_RenderDistanceSkyboxMatrix");
-
-    this._gl.uniformMatrix4fv(this._uViewSkyboxMatrixLocation, false, this._viewSkyboxMatrix);
-    this._gl.uniformMatrix4fv(this._uPerspectiveSkyboxMatrixLocation, false, this._perspectiveMatrix);
-    this._gl.uniformMatrix4fv(this._uRenderDistanceSkyboxMatrixLocation, false, mat4.scale(this._renderDistanceMatrix, this._renderDistanceMatrix, [this._renderDistance, this._renderDistance, this._renderDistance]));
   }
 
-  updatePerspective() {
+  updateStatus() {
+    for(const uniform of this._uniformsArray) {
+      this._gl.useProgram(uniform.program);
+      this._gl.uniformMatrix4fv(uniform.uViewMatrixLocation, false, this._viewMatrix);
+      this._gl.uniformMatrix4fv(uniform.uPerspectiveMatrixLocation, false, this._perspectiveMatrix);
+    }
+
+    /*this._gl.useProgram(this._program);
+    this._gl.uniformMatrix4fv(this._uViewMatrixLocation, false, this._viewMatrix);
+    this._gl.uniformMatrix4fv(this._uPerspectiveMatrixLocation, false, this._perspectiveMatrix);*/
+
+    this._gl.useProgram(this._skyboxProgram);
+    this._gl.uniformMatrix4fv(this._uViewSkyboxMatrixLocation, false, this._viewSkyboxMatrix);
+    this._gl.uniformMatrix4fv(this._uPerspectiveSkyboxMatrixLocation, false, this._perspectiveMatrix);
+    this._gl.uniformMatrix4fv(this._uRenderDistanceSkyboxMatrixLocation, false, mat4.scale(this._renderDistanceMatrix, mat4.create(), [-this.renderDistance, -this.renderDistance, -this.renderDistance]));
+
     if((this._gl.canvas.width !== Math.floor(this._gl.canvas.clientWidth * window.devicePixelRatio)) || (this._gl.canvas.height !== Math.floor(this._gl.canvas.clientHeight * window.devicePixelRatio))) {
       this._gl.canvas.width = Math.floor(this._gl.canvas.clientWidth * window.devicePixelRatio);
       this._gl.canvas.height = Math.floor(this._gl.canvas.clientHeight * window.devicePixelRatio);
       this._gl.viewport(0, 0, this._gl.canvas.width, this._gl.canvas.height);
 
       mat4.perspective(this._perspectiveMatrix, 45, this._gl.canvas.width / this._gl.canvas.height, 0.1, this.renderDistance * Math.sqrt(3));
-      this._gl.useProgram(this._program);
-      this._gl.uniformMatrix4fv(this._uPerspectiveMatrixLocation, false, this._perspectiveMatrix);
+     // this._gl.useProgram(this._program);
+     // this._gl.uniformMatrix4fv(this._uPerspectiveMatrixLocation, false, this._perspectiveMatrix);
 
-      this._gl.useProgram(this._skyboxProgram);
-      this._gl.uniformMatrix4fv(this._uPerspectiveSkyboxMatrixLocation, false, this._perspectiveMatrix);
+      //this._gl.useProgram(this._skyboxProgram);
+      //this._gl.uniformMatrix4fv(this._uPerspectiveSkyboxMatrixLocation, false, this._perspectiveMatrix);
     }
   }
 
-  get renderDistance() {
-    return this._renderDistance;
+  set position(positionArray) {
+    mat4.translate(this._viewMatrix, this._viewMatrix, positionArray);
+    mat4.invert(this._viewMatrix, this._viewMatrix);
   }
 
-  set renderDistance(value) {
-    this._renderDistance = value;
-    this._gl.uniformMatrix4fv(this._uRenderDistanceSkyboxMatrixLocation, false, mat4.scale(this._renderDistanceMatrix, this._renderDistanceMatrix, [-this._renderDistance, -this._renderDistance, -this._renderDistance]));
+  set rotation(rotationArray) {
+    mat4.rotateZ(this._viewMatrix, this._viewMatrix, rotationArray[2]);
+    mat4.rotateY(this._viewMatrix, this._viewMatrix, rotationArray[1]);
+    mat4.rotateX(this._viewMatrix, this._viewMatrix, rotationArray[0]);
   }
 
   static create(gl, program, skyboxProgram) {
     return new GLCamera(gl, program, skyboxProgram);
   }
+
+
 }
 
 export class GLModel {
   _gl;
   _program;
 
-  _parser;
-
-  _positions;
-  _indices;
+  //_indices;
   _aPositionLocation;
-  _positionBuffer;
+
+  _bufferData;
 
   _texcoords;
   _aTexcoordLocation;
 
   _texture;
 
-  _image;
   color = [1.0, 1.0, 1.0, 1.0];
 
   _uPositionMatrixLocation;
@@ -121,31 +137,23 @@ export class GLModel {
 
   static currentObjects = [];
 
-  constructor(gl, program, modelData, image) {
+  constructor(gl, program, bufferData, texture) {
     this._gl = gl;
     this._program = program;
 
-    this._parser = new OBJParser();
-    this._parser.parse(modelData);
-
-    this._positions = this._parser.getCombinedVertices();
+    this._bufferData = bufferData;
+    this._texture = texture;
 
     this._stride = 8 * Float32Array.BYTES_PER_ELEMENT;
 
-    this._image = image;
-
-    this.#initBuffers();
-    this.#initTexture();
+    this.#initGLModel();
 
     GLModel.currentObjects.push(this);
   }
 
-  #initBuffers() {
+  #initGLModel() {
     this._gl.useProgram(this._program);
     this._aPositionLocation = this._gl.getAttribLocation(this._program, "a_Position");
-    this._vertexBuffer = this._gl.createBuffer();
-    this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._vertexBuffer);
-    this._gl.bufferData(this._gl.ARRAY_BUFFER, new Float32Array(this._positions), this._gl.STATIC_DRAW);
 
     this._aTexcoordLocation = this._gl.getAttribLocation(this._program, "a_Texcoord");
 
@@ -160,21 +168,6 @@ export class GLModel {
     this._uScaleMatrixLocation = this._gl.getUniformLocation(this._program, "u_ScaleMatrix");
 
     this._uColorLocation =  this._gl.getUniformLocation(this._program, "u_Color");
-  }
-
-  #initTexture() {
-    this._texture = this._gl.createTexture();
-    this._gl.bindTexture(this._gl.TEXTURE_2D, this._texture);
-    
-    // Временная заполняющая текстура
-    this._gl.texImage2D(this._gl.TEXTURE_2D, 0, this._gl.RGBA, 1, 1, 0, this._gl.RGBA, this._gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
-  
-    // Загрузки изображения
-    this._gl.bindTexture(this._gl.TEXTURE_2D, this._texture);
-    this._gl.texImage2D(this._gl.TEXTURE_2D, 0, this._gl.RGBA, this._gl.RGBA, this._gl.UNSIGNED_BYTE, this._image);
-    this._gl.generateMipmap(this._gl.TEXTURE_2D);
-    this._gl.texParameteri(this._gl.TEXTURE_2D, this._gl.TEXTURE_MIN_FILTER, this._gl.LINEAR);
-    
   }
 
   get position() {
@@ -209,7 +202,7 @@ export class GLModel {
   render() {
     this._gl.useProgram(this._program);
     
-    this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._vertexBuffer);
+    this._gl.bindBuffer(this._gl.ARRAY_BUFFER, this._bufferData.buffer);
 
     this._gl.vertexAttribPointer(this._aPositionLocation, 3, this._gl.FLOAT, false, this._stride, 0);
     this._gl.enableVertexAttribArray(this._aPositionLocation);
@@ -234,12 +227,10 @@ export class GLModel {
     this._gl.uniformMatrix4fv(this._uScaleMatrixLocation, false, this._scaleMatrix);
     this._gl.uniform4fv(this._uColorLocation, this.color);
 
-    this._gl.drawArrays(this._gl.TRIANGLES, 0, this._positions.length / 8);
+    this._gl.drawArrays(this._gl.TRIANGLES, 0, this._bufferData.vertexCount);
   }
 
-  static async create(gl, program, modelDataPath, imagePath) {
-          const modelData = await fileReader(modelDataPath);
-          const image = await imageLoader(imagePath);
+  static async create(gl, program, modelData, image) {
           return new GLModel(gl, program, modelData, image);
       }
 }
@@ -249,7 +240,7 @@ let deltaTime = 1;
 
 export function frameRender(gl, timeNow, func) {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  GLCamera.activeCamera.updatePerspective();
+  GLCamera.activeCamera.updateStatus();
 
   GLModel.currentObjects.forEach(object => object.render());
 
