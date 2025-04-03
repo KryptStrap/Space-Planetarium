@@ -1,5 +1,4 @@
 import {GLModel} from "../KryptEngine/webgl-scene.js";
-import { fileReader, imageLoader } from "../KryptEngine/fileLoader.js";
 
 export class SpacePlanet extends GLModel {
     #parentPlanet;
@@ -53,9 +52,7 @@ export class SpacePlanet extends GLModel {
         }
     }
 
-    static async create(gl, program, modelDataPath, imagePath, radius, parrentPlanet, distanceFromParent) {
-        const modelData = await fileReader(modelDataPath);
-        const image = await imageLoader(imagePath);
-        return new SpacePlanet(gl, program, modelData, image, radius, parrentPlanet, distanceFromParent);
+    static async create(gl, program, bufferData, texture) {
+        return new SpacePlanet(gl, program, bufferData, texture);
     }
 }

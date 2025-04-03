@@ -123,21 +123,21 @@ export class FreeCamera extends GLCamera {
   speedRotation = 1;
   static currentObjects = [];
 
-  constructor(gl, program, skyboxProgram) {
-    super(gl, program, skyboxProgram);
+  constructor(gl, programs, skyboxProgram) {
+    super(gl, programs, skyboxProgram);
     FreeCamera.currentObjects.push(this);
   };
 
   #updateViewMatrix(matrix) {
     mat4.multiply(this._viewMatrix, matrix, this._viewMatrix);
-    this._gl.useProgram(this._program);
-    this._gl.uniformMatrix4fv(this._uViewMatrixLocation, false, this._viewMatrix);
+    //this._gl.useProgram(this._program);
+    //this._gl.uniformMatrix4fv(this._uViewMatrixLocation, false, this._viewMatrix);
   };
     
   #updateViewSkyboxMatrix(matrix) {
     mat4.multiply(this._viewSkyboxMatrix, matrix, this._viewSkyboxMatrix);
-    this._gl.useProgram(this._skyboxProgram);
-    this._gl.uniformMatrix4fv(this._uViewSkyboxMatrixLocation, false, this._viewSkyboxMatrix);
+   // this._gl.useProgram(this._skyboxProgram);
+    //this._gl.uniformMatrix4fv(this._uViewSkyboxMatrixLocation, false, this._viewSkyboxMatrix);
   };
     
   #moveLocalX(speed) {
@@ -222,7 +222,7 @@ export class FreeCamera extends GLCamera {
     };
   };
 
-  static create(gl, program, skyboxProgram) {
-    return new FreeCamera(gl, program, skyboxProgram);
+  static create(gl, programs, skyboxProgram) {
+    return new FreeCamera(gl, programs, skyboxProgram);
   };
 };
