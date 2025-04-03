@@ -1,4 +1,4 @@
-import { fileReader } from "./fileLoader.js";
+import { fileReader } from "./file-loader.js";
 
 function initContext(canvas) {
   let gl = null;
