@@ -27,9 +27,10 @@ import { updateInfo, timeAcceleration } from "./scripts/interface.js";
         createProgram(gl, skyboxVertexShader, skyboxFragmentShader)
     ]);
 
-    const [sphereModel, milkyWayImage, sunImage, mercuryImage, venusImage, earthImage, earthCloudsImage,
-        moonImage, marsImage, jupiterImage, saturnImage, uranusImage, neptuneImage, plutoImage] = await Promise.all([
+    const [sphereModel, saturnCycleModel, milkyWayImage, sunImage, mercuryImage, venusImage, earthImage, earthCloudsImage,
+        moonImage, marsImage, jupiterImage, saturnImage, saturnCycleImage, uranusImage, neptuneImage, plutoImage] = await Promise.all([
         parseObj("./assets/models/sphere.obj"),
+        parseObj("./assets/models/saturn-cycle.obj"),
         imageLoader("./assets/textures/Milky-Way-panorama_4000.jpg"),
         imageLoader("./assets/textures/sun.jpg"),
         imageLoader("./assets/textures/mercury.jpg"),
@@ -40,12 +41,15 @@ import { updateInfo, timeAcceleration } from "./scripts/interface.js";
         imageLoader("./assets/textures/mars.jpg"),
         imageLoader("./assets/textures/jupiter.jpg"),
         imageLoader("./assets/textures/saturn.jpg"),
+        imageLoader("./assets/textures/saturn (1).jpg"),
         imageLoader("./assets/textures/uranus.jpg"),
         imageLoader("./assets/textures/neptune.jpg"),
         imageLoader("./assets/textures/pluto.jpg"),
     ]);
 
     const sphereBufferData = createBuffer(gl, sphereModel);
+    const saturnCycleBufferData = createBuffer(gl, saturnCycleModel);
+
 
     const milkyWayTexture = createTexture(gl, milkyWayImage);
     const sunTexture = createTexture(gl, sunImage);
@@ -57,6 +61,7 @@ import { updateInfo, timeAcceleration } from "./scripts/interface.js";
     const marsTexture = createTexture(gl, marsImage);
     const jupiterTexture = createTexture(gl, jupiterImage);
     const saturnTexture = createTexture(gl, saturnImage);
+    const saturnCycleTexture = createTexture(gl, saturnCycleImage);
     const uranusTexture = createTexture(gl, uranusImage);
     const neptuneTexture = createTexture(gl, neptuneImage);
     const plutoTexture = createTexture(gl, plutoImage);
@@ -120,6 +125,11 @@ import { updateInfo, timeAcceleration } from "./scripts/interface.js";
     saturn.scale = [45, 45, 45];
     saturn.setParrentPlanet(sun, 15000);
     saturn.setAngularSpeedRotation(0.01, 0.000300);
+
+    const saturnCycle = await SpacePlanet.create(gl, planetProgram, saturnCycleBufferData, saturnCycleTexture);
+    saturnCycle.scale = [85, 85, 85];
+    saturnCycle.setParrentPlanet(saturn, 0);
+    saturnCycle.setAngularSpeedRotation(0.01, 0);
 
     const uranus = await SpacePlanet.create(gl, planetProgram, sphereBufferData, uranusTexture);
     uranus.scale = [35, 35, 35];
