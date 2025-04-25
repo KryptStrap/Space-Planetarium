@@ -2,7 +2,7 @@ body {
     margin: 0;
     padding: 0;
     overflow: hidden;
-    background-color: #1A1E62;
+    background-color: rgb(26, 30, 98);
 }
 
 .overlay {
@@ -24,8 +24,8 @@ canvas {
     font-size: 1em;
     padding: 4px;
 
-    color: yellow;
-    background-color: rgba(0, 0, 0, 0.5);
+    color: rgb(255, 255, 0);
+    background-color: #00000080;
     border-radius: 7px;
 }
 
@@ -37,7 +37,26 @@ canvas {
     border-radius: 7px;
     font-size: 1em;
     
-    background-color: gray;
-    color: yellow;
-    border-color: yellow;
+    background-color: rgb(128, 128, 128);
+    color: rgb(255, 255, 0);
+    border-color: rgb(255, 255, 0);
+}
+
+.time-management {
+    position: absolute;
+    z-index: 10;
+    width: 100%;
+    bottom: 3%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.left-button, .pause-button, .right-button {
+    border-radius: 7px;
+    font-size: 1em;
+    
+    background-color: rgb(128, 128, 128);
+    color: rgb(255, 255, 0);
+    border-color: rgb(255, 255, 0);
 }

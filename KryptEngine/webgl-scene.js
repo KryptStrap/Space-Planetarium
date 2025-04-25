@@ -14,7 +14,7 @@ export class GLCamera {
 
   _uniformsArray = [];
   _uPerspectiveSkyboxMatrixLocation;
-  _uRenderDistanceSkyboxMatrixLocation
+  _uRenderDistanceSkyboxMatrixLocation;
   _uViewSkyboxMatrixLocation;
 
 
@@ -28,7 +28,7 @@ export class GLCamera {
 
     this.#initGLCamera();
     GLCamera.currentObjects.push(this);
-  }
+  };
 
   #initGLCamera() {
     this._gl.canvas.width = Math.round(this._gl.canvas.clientWidth * window.devicePixelRatio);
@@ -45,7 +45,7 @@ export class GLCamera {
         uViewMatrixLocation: this._gl.getUniformLocation(program, "u_ViewMatrix"),
         uPerspectiveMatrixLocation: this._gl.getUniformLocation(program, "u_PerspectiveMatrix")
       });
-    }
+    };
     
     /*this._gl.useProgram(this._program);
     this._uViewMatrixLocationArray = this._gl.getUniformLocation(this._program, "u_ViewMatrix");
@@ -55,14 +55,14 @@ export class GLCamera {
     this._uViewSkyboxMatrixLocation = this._gl.getUniformLocation(this._skyboxProgram, "u_ViewSkyboxMatrix");
     this._uPerspectiveSkyboxMatrixLocation = this._gl.getUniformLocation(this._skyboxProgram, "u_PerspectiveSkyboxMatrix");
     this._uRenderDistanceSkyboxMatrixLocation = this._gl.getUniformLocation(this._skyboxProgram, "u_RenderDistanceSkyboxMatrix");
-  }
+  };
 
   updateStatus() {
     for(const uniform of this._uniformsArray) {
       this._gl.useProgram(uniform.program);
       this._gl.uniformMatrix4fv(uniform.uViewMatrixLocation, false, this._viewMatrix);
       this._gl.uniformMatrix4fv(uniform.uPerspectiveMatrixLocation, false, this._perspectiveMatrix);
-    }
+    };
 
     /*this._gl.useProgram(this._program);
     this._gl.uniformMatrix4fv(this._uViewMatrixLocation, false, this._viewMatrix);
@@ -84,26 +84,30 @@ export class GLCamera {
 
       //this._gl.useProgram(this._skyboxProgram);
       //this._gl.uniformMatrix4fv(this._uPerspectiveSkyboxMatrixLocation, false, this._perspectiveMatrix);
-    }
-  }
+    };
+  };
 
   set position(positionArray) {
     mat4.translate(this._viewMatrix, this._viewMatrix, positionArray);
     mat4.invert(this._viewMatrix, this._viewMatrix);
-  }
+  };
 
   set rotation(rotationArray) {
     mat4.rotateZ(this._viewMatrix, this._viewMatrix, rotationArray[2]);
     mat4.rotateY(this._viewMatrix, this._viewMatrix, rotationArray[1]);
     mat4.rotateX(this._viewMatrix, this._viewMatrix, rotationArray[0]);
-  }
+
+    mat4.rotateZ(this._viewSkyboxMatrix, this._viewMatrix, rotationArray[2]);
+    mat4.rotateY(this._viewSkyboxMatrix, this._viewMatrix, rotationArray[1]);
+    mat4.rotateX(this._viewSkyboxMatrix, this._viewMatrix, rotationArray[0]);
+  };
 
   static create(gl, program, skyboxProgram) {
     return new GLCamera(gl, program, skyboxProgram);
-  }
+  };
 
 
-}
+};
 
 export class GLModel {
   _gl;
@@ -112,12 +116,9 @@ export class GLModel {
   //_indices;
   _aPositionLocation;
 
-  _bufferData;
-
-  _texcoords;
   _aTexcoordLocation;
 
-  _texture;
+  _bufferData;
 
   color = [1.0, 1.0, 1.0, 1.0];
 
@@ -149,7 +150,7 @@ export class GLModel {
     this.#initGLModel();
 
     GLModel.currentObjects.push(this);
-  }
+  };
 
   #initGLModel() {
     this._gl.useProgram(this._program);
@@ -168,36 +169,35 @@ export class GLModel {
     this._uScaleMatrixLocation = this._gl.getUniformLocation(this._program, "u_ScaleMatrix");
 
     this._uColorLocation =  this._gl.getUniformLocation(this._program, "u_Color");
-  }
+  };
 
   get position() {
     return this._positionArray;
-  }
+  };
 
   set position(positionArray) {
     this._positionArray = positionArray;
     mat4.translate(this._positionMatrix, this._positionMatrix, this._positionArray);
-  }
+  };
 
   get rotation() {
     return this._rotationArray;
-  }
+  };
 
   set rotation(rotationArray) {
     this._rotationArray = rotationArray;
-    mat4.rotateX(this._rotationMatrix, this._rotationMatrix, this._rotationArray[0]);
-    mat4.rotateY(this._rotationMatrix, this._rotationMatrix, this._rotationArray[1]);
     mat4.rotateZ(this._rotationMatrix, this._rotationMatrix, this._rotationArray[2]);
+    mat4.rotateY(this._rotationMatrix, this._rotationMatrix, this._rotationArray[1]);
+    mat4.rotateX(this._rotationMatrix, this._rotationMatrix, this._rotationArray[0]);
   }
-
   get scale() {
     return this._scaleArray;
-  }
+  };
 
   set scale(scaleArray) {
     this._scaleArray = scaleArray;
     mat4.scale(this._scaleMatrix, this._scaleMatrix, this._scaleArray);
-  }
+  };
 
   render() {
     this._gl.useProgram(this._program);
@@ -228,35 +228,80 @@ export class GLModel {
     this._gl.uniform4fv(this._uColorLocation, this.color);
 
     this._gl.drawArrays(this._gl.TRIANGLES, 0, this._bufferData.vertexCount);
-  }
+  };
 
   static async create(gl, program, modelData, image) {
-          return new GLModel(gl, program, modelData, image);
-      }
-}
+    return new GLModel(gl, program, modelData, image);
+  };
+};
 
-let timeThen = 0;
-let deltaTime = 1;
+export class GLLight {
+  _gl;
+  _programs;
 
-export function frameRender(gl, timeNow, func) {
+  _uniformsArray = [];
+
+  _positionArray = [0.0, 0.0, 0.0];
+  _intensity = 1.0;
+  _color = [1.0, 1.0, 1.0];
+
+  static currentObjects = [];
+
+  constructor(gl, programs) {
+    this._gl = gl;
+    this._programs = programs;
+
+    this.#initGLLight();
+    GLLight.currentObjects.push(this);
+  };
+
+  #initGLLight() {
+    for(const program of this._programs) {
+      this._gl.useProgram(program);
+
+      this._uniformsArray.push({
+        program: program,
+        uLightPositionLocation: this._gl.getUniformLocation(program, "u_LightPosition"),
+        uLightIntensityLocation: this._gl.getUniformLocation(program, "u_LightIntensity"),
+        uLightColorLocation: this._gl.getUniformLocation(program, "u_LightColor"),
+        uNumberLightSources: this._gl.getUniformLocation(program, "u_NumberLightSources")
+
+      });
+    };
+
+    for(const uniform of this._uniformsArray) {
+      this._gl.useProgram(uniform.program);
+
+      this._gl.uniform3fv(uniform.uLightPositionLocation, this._positionArray);
+      this._gl.uniform1f(uniform.uLightIntensityLocation, this._intensity);
+      this._gl.uniform3fv(uniform.uLightColorLocation, this._color);
+    };
+  };
+
+  static create(gl, programs) {
+    return new GLLight(gl, programs);
+  }
+};
+
+export const frameRender = (gl, timeNow, timeThen, callback) => {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   GLCamera.activeCamera.updateStatus();
 
   GLModel.currentObjects.forEach(object => object.render());
 
   timeNow *= 0.001;
-  deltaTime = timeNow - timeThen;
-  timeThen = timeNow;
 
-  if (typeof func === "function") {
+  if (typeof callback === "function") {
     try {
-      func(deltaTime);
+      callback(timeNow - timeThen);
     } catch (error) {
       console.error("An error occurred while executing the function:", error);
-    }
+    };
   } else {
     console.error("The passed argument is not a function.");
   };
+
+  timeThen = timeNow;
   
-  requestAnimationFrame(timeNow => frameRender(gl, timeNow, func));
-}
+  requestAnimationFrame(timeNow => frameRender(gl, timeNow, timeThen, callback));
+};

@@ -1,14 +1,15 @@
 import { initGL, createShader, createProgram } from "./KryptEngine/webgl-context.js";
 import { parseObj, imageLoader } from "./KryptEngine/file-loader.js";
 import { createBuffer, createTexture } from "./KryptEngine/webgl-resource.js";
-import { frameRender, GLCamera, GLModel } from "./KryptEngine/webgl-scene.js";
-import { SpacePlanet } from "./scripts/PlanetGLRenderer.js";
-import { FreeCamera, InputManager } from "./scripts/InputManager.js";
+import { frameRender, GLCamera, GLLight, GLModel } from "./KryptEngine/webgl-scene.js";
+import { SpacePlanet } from "./scripts/planetGL-renderer.js";
+import { FreeCamera, InputManager } from "./scripts/input-manager.js";
+import { updateInfo, timeAcceleration } from "./scripts/interface.js";
 
 (async function main() {
     const gl = initGL();
 
-    const [standartVertexShader, standartFragmentShader, starVertexShader, starFragmentShader, skyboxVertexShader, skyboxFragmentShader] = await Promise.all([
+    const [planetVertexShader, planetFragmentShader, starVertexShader, starFragmentShader, skyboxVertexShader, skyboxFragmentShader] = await Promise.all([
         createShader(gl, gl.VERTEX_SHADER, "./KryptEngine/Shaders/planetVertexShader.vert"),
         createShader(gl, gl.FRAGMENT_SHADER, "./KryptEngine/Shaders/planetFragmentShader.frag"),
 
@@ -20,8 +21,8 @@ import { FreeCamera, InputManager } from "./scripts/InputManager.js";
 
     ]);
 
-    const [standartProgram, starProgram, skyboxProgram] = await Promise.all([
-        createProgram(gl, standartVertexShader, standartFragmentShader),
+    const [planetProgram, starProgram, skyboxProgram] = await Promise.all([
+        createProgram(gl, planetVertexShader, planetFragmentShader),
         createProgram(gl, starVertexShader, starFragmentShader),
         createProgram(gl, skyboxVertexShader, skyboxFragmentShader)
     ]);
@@ -60,12 +61,12 @@ import { FreeCamera, InputManager } from "./scripts/InputManager.js";
     const neptuneTexture = createTexture(gl, neptuneImage);
     const plutoTexture = createTexture(gl, plutoImage);
 
-    const camera0 = FreeCamera.create(gl, [standartProgram, starProgram], skyboxProgram);
+    const camera0 = FreeCamera.create(gl, [planetProgram, starProgram], skyboxProgram);
     camera0.renderDistance = 100000;
     camera0.speedMove = 1000;
     camera0.speedRotation = 4;
+    camera0.position = [0.0, 6000.0, 14000.0];
     camera0.rotation = [0.0, 3.14, 0.0];
-    camera0.position = [0.0, 300.0, 2000.0]
     GLCamera.activeCamera = camera0;
 
     InputManager.init();
@@ -73,71 +74,71 @@ import { FreeCamera, InputManager } from "./scripts/InputManager.js";
     const skybox = GLModel.create(gl, skyboxProgram, sphereBufferData, milkyWayTexture);
 
     const sun = await SpacePlanet.create(gl, starProgram, sphereBufferData, sunTexture);
-    sun.scale = [100, 100, 100];
+    sun.scale = [1000, 1000, 1000];
     sun.setAngularSpeedRotation(0.01, 0);
     sun.position = [0.0, 0.0, 0.0];
 
-    const mercury = await SpacePlanet.create(gl, standartProgram, sphereBufferData, mercuryTexture);
+    const light = GLLight.create(gl, [planetProgram]);
+
+    const mercury = await SpacePlanet.create(gl, planetProgram, sphereBufferData, mercuryTexture);
     mercury.scale = [25, 25, 25];
-    mercury.setPareentPlanet(sun, 1200);
+    mercury.setParrentPlanet(sun, 5000);
     mercury.setAngularSpeedRotation(0.01, 0.01);
 
-    const venus = await SpacePlanet.create(gl, standartProgram, sphereBufferData, venusTexture);
+    const venus = await SpacePlanet.create(gl, planetProgram, sphereBufferData, venusTexture);
     venus.scale = [25, 25, 25];
-    venus.setPareentPlanet(sun, 2400);
+    venus.setParrentPlanet(sun, 7000);
     venus.setAngularSpeedRotation(0.01, 0.005);
 
-    const earth = await SpacePlanet.create(gl, standartProgram, sphereBufferData, earthTexture);
+    const earth = await SpacePlanet.create(gl, planetProgram, sphereBufferData, earthTexture);
     earth.scale = [25, 25, 25];
-    earth.setPareentPlanet(sun, 2800);
+    earth.setParrentPlanet(sun, 9000);
     earth.setAngularSpeedRotation(0.01, 0.0025);
 
-    const earthClouds = await SpacePlanet.create(gl, standartProgram, sphereBufferData, earthCloudsTexture);
+    const earthClouds = await SpacePlanet.create(gl, planetProgram, sphereBufferData, earthCloudsTexture);
     earthClouds.scale = [26, 26, 26];
-    earthClouds.setPareentPlanet(earth, 0);
+    earthClouds.setParrentPlanet(earth, 0);
     earthClouds.setAngularSpeedRotation(0.02, 0);
     earthClouds.color = [1.0, 1.0, 1.0, 0.4];
 
-    const moon = await SpacePlanet.create(gl, standartProgram, sphereBufferData, moonTexture);
+    const moon = await SpacePlanet.create(gl, planetProgram, sphereBufferData, moonTexture);
     moon.scale = [10, 10, 10];
-    moon.setPareentPlanet(earth, 200);
+    moon.setParrentPlanet(earth, 500);
     moon.setAngularSpeedRotation(0.01, 0.01);
 
-    const mars = await SpacePlanet.create(gl, standartProgram, sphereBufferData, marsTexture);
+    const mars = await SpacePlanet.create(gl, planetProgram, sphereBufferData, marsTexture);
     mars.scale = [15, 15, 15];
-    mars.setPareentPlanet(sun, 3200);
+    mars.setParrentPlanet(sun, 11000);
     mars.setAngularSpeedRotation(0.01, 0.00125);
 
-    const jupiter = await SpacePlanet.create(gl, standartProgram, sphereBufferData, jupiterTexture);
+    const jupiter = await SpacePlanet.create(gl, planetProgram, sphereBufferData, jupiterTexture);
     jupiter.scale = [50, 50, 50];
-    jupiter.setPareentPlanet(sun, 4000);
+    jupiter.setParrentPlanet(sun, 13000);
     jupiter.setAngularSpeedRotation(0.01, 0.000675);
 
-    const saturn = await SpacePlanet.create(gl, standartProgram, sphereBufferData, saturnTexture);
+    const saturn = await SpacePlanet.create(gl, planetProgram, sphereBufferData, saturnTexture);
     saturn.scale = [45, 45, 45];
-    saturn.setPareentPlanet(sun, 5000);
+    saturn.setParrentPlanet(sun, 15000);
     saturn.setAngularSpeedRotation(0.01, 0.000300);
 
-    const uranus = await SpacePlanet.create(gl, standartProgram, sphereBufferData, uranusTexture);
+    const uranus = await SpacePlanet.create(gl, planetProgram, sphereBufferData, uranusTexture);
     uranus.scale = [35, 35, 35];
-    uranus.setPareentPlanet(sun, 6000);
+    uranus.setParrentPlanet(sun, 17000);
     uranus.setAngularSpeedRotation(0.01, 0.000150);
 
-    const neptune = await SpacePlanet.create(gl, standartProgram, sphereBufferData, neptuneTexture);
+    const neptune = await SpacePlanet.create(gl, planetProgram, sphereBufferData, neptuneTexture);
     neptune.scale = [40, 40, 40];
-    neptune.setPareentPlanet(sun, 7000);
+    neptune.setParrentPlanet(sun, 19000);
     neptune.setAngularSpeedRotation(0.01, 0.000075);
 
-    const pluto = await SpacePlanet.create(gl, standartProgram, sphereBufferData, plutoTexture);
+    const pluto = await SpacePlanet.create(gl, planetProgram, sphereBufferData, plutoTexture);
     pluto.scale = [10, 10, 10];
-    pluto.setPareentPlanet(sun, 8000);
+    pluto.setParrentPlanet(sun, 21000);
     pluto.setAngularSpeedRotation(0.01, 0.000030);
 
-    const frameRateHTML = document.querySelector(".info");
-
-    requestAnimationFrame(timeNow => frameRender(gl, timeNow, deltaTime => {
-        SpacePlanet.currentObjects.forEach(object => object.rotationStep(deltaTime, 8));
+    requestAnimationFrame(timeNow => frameRender(gl, timeNow, 0, deltaTime => {
+        SpacePlanet.currentObjects.forEach(object => object.rotationStep(deltaTime, timeAcceleration));
         FreeCamera.activeCamera.transformEvents(deltaTime);
-        frameRateHTML.innerText = `FPS: ${Math.round(1 / deltaTime)}\n Resolution: ${gl.canvas.width}x${gl.canvas.height}`;
+        updateInfo(gl, deltaTime);
     }));
 })();

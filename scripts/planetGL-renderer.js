@@ -1,8 +1,9 @@
-import {GLModel} from "../KryptEngine/webgl-scene.js";
+import { GLModel } from "../KryptEngine/webgl-scene.js";
+import { timeAcceleration } from "./interface.js";
 
 export class SpacePlanet extends GLModel {
     #parentPlanet;
-    #distanceFromParent = 0;
+    #distanceFromParrent = 0;
     #revolution = 0;
 
     #axisRotationSpeed = 0;
@@ -18,9 +19,9 @@ export class SpacePlanet extends GLModel {
         SpacePlanet.currentObjects.push(this);
     }
 
-    setPareentPlanet(parrentPlanet, distanceFromParent) {
+    setParrentPlanet(parrentPlanet, distanceFromParrent) {
         this.#parentPlanet = parrentPlanet;
-        this.#distanceFromParent = distanceFromParent;
+        this.#distanceFromParrent = distanceFromParrent;
     }
 
     setAngularSpeedRotation(axisRotationSpeed, orbitalRotationSpeed) {
@@ -28,10 +29,10 @@ export class SpacePlanet extends GLModel {
         this.#orbitalRotationSpeed = orbitalRotationSpeed;
     }
 
-    rotationStep(deltaTime, timeAcceleration) {
+    rotationStep(deltaTime) {
         if(this.#parentPlanet) {
-            this._positionArray[0] = this.#parentPlanet._positionArray[0] + this.#distanceFromParent * Math.sin(this.#revolution);
-            this._positionArray[2] = this.#parentPlanet._positionArray[2] + this.#distanceFromParent * Math.cos(this.#revolution);
+            this._positionArray[0] = this.#parentPlanet._positionArray[0] + this.#distanceFromParrent * Math.sin(this.#revolution);
+            this._positionArray[2] = this.#parentPlanet._positionArray[2] + this.#distanceFromParrent * Math.cos(this.#revolution);
             this.#revolution += this.#orbitalRotationSpeed * deltaTime * timeAcceleration;
 
             this._rotationArray[1] += this.#axisRotationSpeed * deltaTime * timeAcceleration;

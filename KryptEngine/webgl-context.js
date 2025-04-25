@@ -1,6 +1,6 @@
 import { fileReader } from "./file-loader.js";
 
-function initContext(canvas) {
+export const initContext = canvas => {
   let gl = null;
   
   try {
@@ -15,7 +15,7 @@ function initContext(canvas) {
   return gl;
 }
 
-export function initGL() {
+export const initGL = () => {
   const canvas = document.querySelector("canvas");
 
   const gl = initContext(canvas);
@@ -37,14 +37,10 @@ export function initGL() {
 
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // очистить буфер цвета и буфер глубины.
 
-  document.querySelector(".fullscreen-button").addEventListener("click", () => {
-    document.querySelector(".overlay").requestFullscreen();
-  });
-
   return gl;
 }
 
-export async function createShader(gl, type, shaderSource) {
+export const createShader = async (gl, type, shaderSource) => {
 
   const shader = gl.createShader(type);   // создание шейдера
   const shaderData = await fileReader(shaderSource);
@@ -61,7 +57,7 @@ export async function createShader(gl, type, shaderSource) {
   gl.deleteShader(shader);
 }
 
-export function createProgram(gl, vertexShader, fragmentShader) {
+export const createProgram = (gl, vertexShader, fragmentShader) => {
 
   const program = gl.createProgram();
   gl.attachShader(program, vertexShader);
